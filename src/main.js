@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import './style.css';
-import { createForest } from './world/forest.js';
+import { createForest, disposeObject } from './world/forest.js';
+import { createSignpost } from './world/signpost.js';
+import { AREA_BY_ID } from './data/areas.js';
+import { Travel } from './ui/travel.js';
+import { Music } from './audio/music.js';
 import { TimeOfDay } from './world/timeOfDay.js';
 import { Player } from './player/player.js';
 import { Controls } from './player/controls.js';
@@ -42,14 +46,6 @@ const fitFov = () => {
 };
 fitFov();
 
-const world = createForest(scene);
-const time = new TimeOfDay(scene, { dayLengthSeconds: 240, startAt: 0.07 });
-const player = new Player(scene, world);
-const controls = new Controls(canvas);
-const insects = new InsectManager(scene, world);
-const animals = new AnimalManager(scene, world);
-const pot = createPot(scene, world);
-const fruits = createFruitBushes(scene, world);
 const save = loadSave();
 // 예전 저장: 이미 만난 친구의 단어 카드 채워주기
 for (const id in save.met) {
@@ -57,7 +53,53 @@ for (const id in save.met) {
   if (w && !save.words.includes(w)) save.words.push(w);
 }
 const isFriend = (id) => (save.hearts[id] || 0) >= HEARTS_TO_FRIEND;
-if (save.companion && isFriend(save.companion)) animals.startFollow(animals.byId(save.companion));
+
+const time = new TimeOfDay(scene, { dayLengthSeconds: 240, startAt: 0.07 });
+const controls = new Controls(canvas);
+const music = new Music();
+
+// ── 숲 불러오기 ──
+let world = null;
+let insects = null;
+let animals = null;
+let pot = null;
+let fruits = null;
+let signpost = null;
+let trees = [];
+let player = null;
+
+function buildArea(id) {
+  const area = AREA_BY_ID[id]?.ready ? AREA_BY_ID[id] : AREA_BY_ID.catchup;
+  const companionId = save.companion && isFriend(save.companion) ? save.companion : null;
+  if (world) {
+    animals.dispose();
+    disposeObject(world.root);
+  }
+  world = createForest(scene, area);
+  time.setArea(area);
+  music.setArea(area.id);
+  signpost = createSignpost(world);
+  pot = area.features.includes('pot') ? createPot(scene, world) : null;
+  fruits = area.features.includes('fruits') ? createFruitBushes(scene, world) : null;
+  insects = new InsectManager(scene, world);
+  // 표지판 옆에서 시작해요
+  const sp = world.zones.signpost;
+  const arrival = { x: sp.x - 2.2, z: sp.z + 2.2 };
+  if (player) {
+    player.world = world;
+    player.position.set(arrival.x, world.heightAt(arrival.x, arrival.z), arrival.z);
+    player.sync();
+  }
+  animals = new AnimalManager(scene, world, { companionId, arrival });
+  animals.onSulk = (a) => hud.toast(`💢 <b>${josa(a.data.name, '가', '이')}</b> 삐졌어요! 가서 우쭈쭈 해주세요`);
+  trees = world.colliders.filter((c) => c.tree);
+  save.area = area.id;
+  writeSave(save);
+  return area;
+}
+
+buildArea(save.area || 'catchup');
+player = new Player(scene, world);
 
 // 새싹 성장 상태
 let lastGrowth = growthKey(save);
@@ -69,6 +111,8 @@ const hud = new Hud(uiRoot, {
   isTouch: controls.isTouch,
   onCatch: () => interact(),
   onOpenDex: () => dex.open(),
+  onMusic: () => music.toggle(),
+  musicOn: !music.muted,
 });
 const dex = new Dex(uiRoot, save, {
   onOpen: () => {
@@ -89,7 +133,13 @@ const kitchen = new Kitchen(uiRoot, {
   },
 });
 
-animals.onSulk = (a) => hud.toast(`💢 <b>${josa(a.data.name, '가', '이')}</b> 삐졌어요! 가서 우쭈쭈 해주세요`);
+const travel = new Travel(uiRoot, {
+  save,
+  onGo: (id) => goToArea(id),
+  onClose: () => {
+    if (state === 'play') controls.enabled = true;
+  },
+});
 
 const dialogue = new Dialogue(uiRoot, {
   save,
@@ -131,23 +181,48 @@ new TitleScreen(uiRoot, () => {
   state = 'play';
   controls.enabled = true;
   controls.yaw = Math.PI * 0.15;
+  music.start();
   hud.show();
+  const area = AREA_BY_ID[save.area] || AREA_BY_ID.catchup;
+  setTimeout(() => hud.banner(area.name, area.en), 1200);
 });
+
+// 다른 숲으로 이동
+function goToArea(id) {
+  hud.fade(() => {
+    if (activeFruit) activeFruit = null;
+    const area = buildArea(id);
+    controls.yaw = Math.atan2(player.position.x, player.position.z);
+    blend = 1;
+    if (state === 'play') controls.enabled = true;
+    hud.banner(area.name, area.en);
+  });
+}
+
+function openTravel() {
+  controls.enabled = false;
+  controls.reset();
+  hud.hideTarget();
+  travel.open(world.area.id);
+}
 
 controls.onAction(() => interact());
 
 function currentTarget() {
-  const a = animals.findTalkable(player.position);
+  const a = animals.findTalkable(player.position, 3.6, true);
+  const f = animals.follower;
   const talkTarget = (x) => ({ kind: 'animal', ref: x, id: 'a:' + x.data.id + (x.sulking ? 's' : ''), html: x.sulking ? `우쭈쭈 · ${x.data.name} 💢` : `말 걸기 · ${x.data.name}` });
   // 같이 다니는 친구는 삐졌을 때만 먼저 챙겨요
-  if (a && (!a.following || a.sulking)) return talkTarget(a);
-  const bush = fruits.findNear(player.position);
+  if (a) return talkTarget(a);
+  const signD = Math.hypot(signpost.position.x - player.position.x, signpost.position.z - player.position.z) - signpost.radius;
+  if (signD < 2.8) return { kind: 'sign', id: 'sign', html: '보기 · 숲길 표지판' };
+  const bush = fruits?.findNear(player.position);
   if (bush) return { kind: 'fruit', ref: bush, id: 'f:' + bush.fruit.id, html: `먹기 · ${bush.fruit.name} <b style="color:${bush.fruit.color}">${bush.fruit.icon}</b>` };
-  const potD = Math.hypot(pot.position.x - player.position.x, pot.position.z - player.position.z) - pot.radius;
+  const potD = pot ? Math.hypot(pot.position.x - player.position.x, pot.position.z - player.position.z) - pot.radius : Infinity;
   if (potD < 3.0) return { kind: 'pot', id: 'pot', html: '요리하기 · 문장 냄비' };
   const bug = insects.findCatchable(player.position);
   if (bug) return { kind: 'bug', ref: bug, id: 'b:' + bug.type.id + bug.group.id, html: `잡기 · ${bug.type.name} <b>${bug.type.mark}</b>` };
-  if (a) return talkTarget(a);
+  if (f && Math.hypot(f.pos.x - player.position.x, f.pos.z - player.position.z) < 4 + f.model.radius) return talkTarget(f);
   return null;
 }
 
@@ -169,12 +244,13 @@ function cooked(text) {
 
 
 function interact() {
-  if (state !== 'play' || dialogue.isOpen || kitchen.isOpen) return;
+  if (state !== 'play' || dialogue.isOpen || kitchen.isOpen || travel.isOpen) return;
   const t = currentTarget();
   if (!t) return;
   if (t.kind === 'animal') openDialogue(t.ref);
   else if (t.kind === 'pot') openKitchen();
   else if (t.kind === 'fruit') eatFruit(t.ref);
+  else if (t.kind === 'sign') openTravel();
   else tryCatch(t.ref);
 }
 
@@ -196,6 +272,11 @@ function myTurn() {
       : { kind: 'dawn', me: pick(MY_LINES.dawn), tag: '🌌 새벽 말투' };
   }
   return { kind: 'normal', me: pick(MY_LINES.normal), tag: '' };
+}
+
+// 미어캣의 아니시에이팅: 내 말을 메아리처럼 따라 해요
+function mirrorLine(me) {
+  return `아니~~ ${me.replace(/[.!?…~]+$/, '')}…라고요~~?`;
 }
 
 // 내 말투에 따라 친구의 대답이 달라져요
@@ -245,7 +326,7 @@ function openDialogue(a) {
     writeSave(save);
   }
   const turn = myTurn();
-  const base = a.sulking ? '힝…' : a.data.lines[0];
+  const base = a.sulking ? '힝…' : a.data.mirror ? mirrorLine(turn.me) : a.data.lines[0];
   const reply = a.sulking ? base : replyTo(a, base, turn.kind);
   const { heard, extra } = show(a, reply, turn, ['nemo', 'donggeul'].includes(turn.kind) ? null : base);
   dialogue.open(a, first ? `${heard}  (${a.data.desc})` : heard, extra);
@@ -259,7 +340,7 @@ function talkTo(a) {
     a.talkLevel = (a.talkLevel + 1 + Math.floor(Math.random() * (d.lines.length - 1))) % d.lines.length;
   }
   const turn = myTurn();
-  const base = d.lines[a.talkLevel];
+  const base = d.mirror ? mirrorLine(turn.me) : d.lines[a.talkLevel];
   const reply = replyTo(a, base, turn.kind);
   const { heard, extra } = show(a, reply, turn, ['nemo', 'donggeul'].includes(turn.kind) ? null : base);
   dialogue.render(heard, extra);
@@ -364,7 +445,6 @@ const camPos = new THREE.Vector3();
 let titleAngle = 0.6;
 let blend = 0; // 타이틀 → 플레이 전환
 
-const trees = world.colliders.filter((c) => c.tree);
 function cameraClearDistance(from, to) {
   const total = from.distanceTo(to);
   let best = total;
@@ -423,14 +503,17 @@ function loop(ts) {
   if (state === 'play') {
     player.update(dt, controls.getMove(), controls.yaw);
     hud.setTime(time.label);
-    if (!dialogue.isOpen && !kitchen.isOpen) hud.setTarget(currentTarget());
+    if (!dialogue.isOpen && !kitchen.isOpen && !travel.isOpen) hud.setTarget(currentTarget());
   }
   const f = animals.follower;
   player.speedMul = f && f.data.id === 'mar' && !f.sulking ? 1.7 : 1;
   insects.update(dt, time.isDay);
   animals.update(dt, player);
-  pot.update(performance.now() / 1000, time.isDay);
-  fruits.update(dt, performance.now() / 1000);
+  const now = performance.now() / 1000;
+  pot?.update(now, time.isDay);
+  fruits?.update(dt, now);
+  world.update(now);
+  music.setNight(time.elevation < -0.12);
   if (activeFruit && !dialogue.isOpen) {
     activeFruit.left -= dt;
     if (activeFruit.left <= 0) {
@@ -475,12 +558,13 @@ window.talkwoods = {
     checkGrowth();
   },
   eat: (id) => {
-    const b = fruits.bushes.find((x) => x.fruit.id === id);
+    const b = fruits?.bushes.find((x) => x.fruit.id === id);
     if (b) eatFruit(b);
   },
   zoom: (d) => {
     controls.distance = d;
   },
+  area: (id) => goToArea(id),
   goTo: (zone) => {
     const z = world.zones[zone];
     if (!z) return;

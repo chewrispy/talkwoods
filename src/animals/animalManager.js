@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { ANIMALS } from '../data/animals.js';
+import { ANIMALS, ANIMAL_BY_ID } from '../data/animals.js';
+import { disposeObject } from '../world/forest.js';
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
 const eye = () => new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshBasicMaterial({ color: '#241a12' }));
@@ -486,7 +487,318 @@ function hippo(a) {
   };
 }
 
-const MODELS = { bigBird, smallBird, sloth, woodpecker, buffalo, horse, hippo };
+// ── 오엉: 추임새 부엉이 (눈이 커졌다가, 화나면 반쯤 감김) ──
+function owl(a) {
+  const g = new THREE.Group();
+  const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 0.7, 10), std('#6b4b32', { roughness: 1 }));
+  stump.position.y = 0.35;
+  stump.castShadow = true;
+  g.add(stump);
+  const bird = new THREE.Group();
+  bird.position.y = 0.7;
+  g.add(bird);
+  const feather = std(a.color);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), feather);
+  body.scale.set(1, 1.15, 0.95);
+  body.position.y = 0.55;
+  body.castShadow = true;
+  bird.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 10), std('#e9dcc4'));
+  belly.scale.set(1, 1.2, 0.45);
+  belly.position.set(0, 0.48, 0.33);
+  bird.add(belly);
+  const face = new THREE.Group();
+  face.position.set(0, 0.85, 0.3);
+  bird.add(face);
+  const lids = [];
+  for (const s of [-1, 1]) {
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.16, 16), new THREE.MeshBasicMaterial({ color: '#fff8e8' }));
+    disc.position.set(0.16 * s, 0, 0.12);
+    face.add(disc);
+    const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.075, 14), new THREE.MeshBasicMaterial({ color: '#241a12' }));
+    pupil.position.set(0.16 * s, 0, 0.125);
+    face.add(pupil);
+    const shine = new THREE.Mesh(new THREE.CircleGeometry(0.025, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+    shine.position.set(0.16 * s + 0.03, 0.03, 0.13);
+    face.add(shine);
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(0.17, 16, 0, Math.PI), feather);
+    lid.position.set(0.16 * s, 0, 0.135);
+    lid.scale.y = 0.01;
+    face.add(lid);
+    lids.push(lid);
+    const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 6), feather);
+    tuft.position.set(0.28 * s, 0.4, -0.25);
+    tuft.rotation.z = -0.35 * s;
+    face.add(tuft);
+  }
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 6), std('#e0a14a'));
+  beak.rotation.x = Math.PI;
+  beak.position.set(0, -0.12, 0.15);
+  face.add(beak);
+  for (const s of [-1, 1]) {
+    const wing = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), std('#76624f'));
+    wing.scale.set(0.35, 0.9, 0.8);
+    wing.position.set(0.47 * s, 0.55, 0);
+    bird.add(wing);
+  }
+  return {
+    group: g,
+    facer: bird,
+    character: bird,
+    bubbleY: 2.4,
+    followBubbleY: 1.6,
+    radius: 0.8,
+    idle(t, talking, level = 0) {
+      face.rotation.z = Math.sin(t * (talking ? 4 : 0.8)) * (talking ? 0.25 : 0.12);
+      const close = talking ? Math.min(1, level / 3) : 0;
+      for (const l of lids) l.scale.y = 0.01 + close * 0.9;
+      body.scale.y = 1.15 + (talking && level < 2 ? Math.abs(Math.sin(t * 8)) * 0.04 : 0);
+    },
+  };
+}
+
+// ── 쿼카: 은은하게 웃는 힐러 ──
+function quokka(a) {
+  const g = new THREE.Group();
+  const fur = std(a.color);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), fur);
+  body.scale.set(1, 1.15, 0.95);
+  body.position.y = 0.5;
+  body.castShadow = true;
+  g.add(body);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), std('#d9c0a0'));
+  belly.scale.set(1, 1.2, 0.45);
+  belly.position.set(0, 0.45, 0.28);
+  g.add(belly);
+  const head = new THREE.Group();
+  head.position.set(0, 1.0, 0.05);
+  g.add(head);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 12), fur);
+  skull.scale.set(1.05, 0.95, 1);
+  skull.castShadow = true;
+  head.add(skull);
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), std('#c9a682'));
+  muzzle.scale.set(1.2, 0.8, 0.8);
+  muzzle.position.set(0, -0.08, 0.24);
+  head.add(muzzle);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: '#2a201a' }));
+  nose.position.set(0, -0.03, 0.35);
+  head.add(nose);
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.014, 6, 14, Math.PI), new THREE.MeshBasicMaterial({ color: '#2a201a' }));
+  smile.rotation.z = Math.PI;
+  smile.position.set(0, -0.1, 0.33);
+  head.add(smile);
+  addEyes(head, 0.06, 0.24, 0.12, 0.04);
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), fur);
+    ear.scale.set(1, 1, 0.5);
+    ear.position.set(0.22 * s, 0.24, -0.02);
+    head.add(ear);
+    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.05, 10), new THREE.MeshBasicMaterial({ color: '#ff9aa8', transparent: true, opacity: 0.7 }));
+    blush.position.set(0.18 * s, -0.05, 0.27);
+    blush.rotation.y = 0.5 * s;
+    head.add(blush);
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), fur);
+    foot.scale.set(0.8, 0.5, 1.6);
+    foot.position.set(0.18 * s, 0.06, 0.15);
+    g.add(foot);
+  }
+  return {
+    group: g,
+    facer: g,
+    character: g,
+    bubbleY: 1.9,
+    radius: 0.6,
+    idle(t, talking) {
+      head.rotation.z = Math.sin(t * (talking ? 3 : 1)) * 0.12;
+      g.children[0].scale.y = 1.15 + Math.sin(t * 2) * 0.02;
+    },
+  };
+}
+
+// ── 미어캣: 굴에서 불쑥 솟아 따라 하는 도발형 ──
+function meerkat(a) {
+  const g = new THREE.Group();
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(0.75, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), std('#a77b52', { roughness: 1 }));
+  mound.scale.y = 0.4;
+  g.add(mound);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(0.3, 14), new THREE.MeshBasicMaterial({ color: '#2a1d14' }));
+  hole.rotation.x = -Math.PI / 2;
+  hole.position.y = 0.31;
+  g.add(hole);
+  const kat = new THREE.Group();
+  kat.position.y = 0.25;
+  g.add(kat);
+  const fur = std(a.color);
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.6, 6, 12), fur);
+  body.position.y = 0.55;
+  body.castShadow = true;
+  kat.add(body);
+  const belly = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.4, 4, 10), std('#efdcbc'));
+  belly.position.set(0, 0.5, 0.1);
+  kat.add(belly);
+  for (const s of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.22, 4, 6), fur);
+    arm.position.set(0.15 * s, 0.68, 0.14);
+    arm.rotation.x = 0.6;
+    kat.add(arm);
+  }
+  const head = new THREE.Group();
+  head.position.y = 1.12;
+  kat.add(head);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), fur);
+  skull.scale.set(1, 1, 1.15);
+  head.add(skull);
+  const snout = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.2, 8), fur);
+  snout.rotation.x = Math.PI / 2;
+  snout.position.set(0, -0.04, 0.2);
+  head.add(snout);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), new THREE.MeshBasicMaterial({ color: '#2a201a' }));
+  nose.position.set(0, -0.04, 0.3);
+  head.add(nose);
+  for (const s of [-1, 1]) {
+    const patch = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), std('#5a4330'));
+    patch.scale.set(1, 0.8, 0.5);
+    patch.position.set(0.09 * s, 0.03, 0.14);
+    head.add(patch);
+    // 반쯤 감은 눈
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.02), new THREE.MeshBasicMaterial({ color: '#1a120c' }));
+    lid.position.set(0.09 * s, 0.035, 0.17);
+    head.add(lid);
+  }
+  // 한쪽만 올라간 입꼬리
+  const smirk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.01, 0.01), new THREE.MeshBasicMaterial({ color: '#1a120c' }));
+  smirk.position.set(0.03, -0.1, 0.22);
+  smirk.rotation.z = 0.35;
+  head.add(smirk);
+  return {
+    group: g,
+    facer: kat,
+    character: kat,
+    bubbleY: 2.1,
+    followBubbleY: 1.6,
+    radius: 0.7,
+    idle(t, talking) {
+      head.rotation.z = Math.sin(t * (talking ? 3 : 0.9)) * 0.3;
+      kat.position.y = talking ? 0.25 : 0.25 + Math.max(0, Math.sin(t * 0.7)) * 0.08;
+    },
+  };
+}
+
+// ── 쉬뱀: 바위 위의 똬리 (화날수록 연두 → 초록 → 보라) ──
+function snake(a) {
+  const g = new THREE.Group();
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.9, 0), std('#a0573f', { flatShading: true }));
+  rock.scale.set(1.3, 0.5, 1.1);
+  rock.position.y = 0.3;
+  rock.castShadow = true;
+  g.add(rock);
+  const coilG = new THREE.Group();
+  coilG.position.y = 0.72;
+  g.add(coilG);
+  const skin = std(a.color, { roughness: 0.5 });
+  const coils = [];
+  [[0.42, 0], [0.32, 0.18], [0.22, 0.34]].forEach(([r, y]) => {
+    const c = new THREE.Mesh(new THREE.TorusGeometry(r, 0.11, 8, 20), skin);
+    c.rotation.x = Math.PI / 2;
+    c.position.y = y;
+    c.castShadow = true;
+    coilG.add(c);
+    coils.push(c);
+  });
+  const neck = new THREE.Group();
+  neck.position.set(0, 0.45, 0.1);
+  coilG.add(neck);
+  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.5, 8), skin);
+  neckMesh.position.y = 0.2;
+  neck.add(neckMesh);
+  const head = new THREE.Group();
+  head.position.set(0, 0.5, 0.06);
+  neck.add(head);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skin);
+  skull.scale.set(1.1, 0.75, 1.35);
+  head.add(skull);
+  for (const s of [-1, 1]) {
+    const fang = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 5), std('#ffffff'));
+    fang.rotation.x = Math.PI;
+    fang.position.set(0.05 * s, -0.11, 0.15);
+    head.add(fang);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.015, 0.02), new THREE.MeshBasicMaterial({ color: '#1a120c' }));
+    brow.position.set(0.08 * s, 0.09, 0.15);
+    brow.rotation.z = -0.5 * s;
+    head.add(brow);
+  }
+  addEyes(head, 0.04, 0.15, 0.08, 0.03);
+  const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.14), std('#e2453c'));
+  tongue.position.set(0, -0.05, 0.25);
+  head.add(tongue);
+  const stage = ['#9ad66a', '#3f9a4a', '#8a4fb5'].map((c) => new THREE.Color(c));
+  return {
+    group: g,
+    facer: coilG,
+    character: coilG,
+    bubbleY: 2.2,
+    followBubbleY: 1.4,
+    radius: 1.2,
+    idle(t, talking, level = 0) {
+      neck.rotation.z = Math.sin(t * (talking ? 3 + level * 2 : 1.2)) * 0.25;
+      tongue.scale.z = Math.max(0, Math.sin(t * 9)) * 1.0 + 0.1;
+      skin.color.lerp(stage[talking ? Math.min(level, 2) : 0], 0.08);
+      const grow = 1 + (talking ? Math.min(level, 2) * 0.12 : 0);
+      coilG.scale.lerp(new THREE.Vector3(grow, grow, grow), 0.08);
+    },
+  };
+}
+
+// ── 진짜냐: 연못 속 피라냐 떼 (말 걸수록 늘어나요) ──
+function piranhas(a) {
+  const g = new THREE.Group();
+  const school = new THREE.Group();
+  g.add(school);
+  const fishes = [];
+  for (let i = 0; i < 10; i++) {
+    const fish = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), std(a.color, { roughness: 0.5 }));
+    body.scale.set(0.6, 0.9, 1.2);
+    fish.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), std('#e2453c'));
+    belly.scale.set(0.55, 0.6, 1.0);
+    belly.position.set(0, -0.08, 0.02);
+    fish.add(belly);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 4), std(a.color));
+    tail.rotation.x = -Math.PI / 2;
+    tail.position.z = -0.32;
+    fish.add(tail);
+    const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.08), std('#f4efe6'));
+    jaw.position.set(0, -0.06, 0.26);
+    fish.add(jaw);
+    addEyes(fish, 0.07, 0.2, 0.09, 0.03);
+    fish.userData = { r: 1.5 + (i % 4) * 0.9, speed: 0.6 + (i % 3) * 0.25, off: i * 1.7, depth: 0.38 + (i % 2) * 0.1 };
+    school.add(fish);
+    fishes.push(fish);
+  }
+  let shown = 3;
+  return {
+    group: g,
+    facer: school,
+    character: school,
+    bubbleY: 2.2,
+    radius: 5.6,
+    idle(t, talking, level = 0) {
+      const want = talking ? [3, 6, 10][Math.min(level, 2)] : 3;
+      shown += (want - shown) * 0.05;
+      fishes.forEach((f, i) => {
+        f.visible = i < Math.round(shown);
+        const u = f.userData;
+        const ang = t * u.speed + u.off;
+        f.position.set(Math.cos(ang) * u.r, u.depth + Math.sin(t * 3 + i) * 0.05 + (talking && level >= 2 ? Math.abs(Math.sin(t * 6 + i)) * 0.35 : 0), Math.sin(ang) * u.r);
+        f.rotation.y = -ang;
+      });
+    },
+  };
+}
+
+const MODELS = { bigBird, smallBird, sloth, woodpecker, buffalo, horse, hippo, owl, quokka, meerkat, snake, piranhas };
 
 function makeBubbleTexture(text) {
   const c = document.createElement('canvas');
@@ -520,49 +832,75 @@ function makeBubbleTexture(text) {
 }
 
 export class AnimalManager {
-  constructor(scene, world) {
+  // companionId: 같이 다니는 친구. 다른 숲 친구면 손님으로 데려와요.
+  constructor(scene, world, { companionId = null, arrival = null } = {}) {
     this.scene = scene;
     this.world = world;
     this.follower = null;
-    this.list = ANIMALS.map((data) => {
-      const model = MODELS[data.model](data);
-      const spot = world.zones[data.spot];
-      const y = world.heightAt(spot.x, spot.z);
-      model.group.position.set(spot.x, y, spot.z);
-      // 출발 지점을 바라보게
-      model.group.rotation.y = Math.atan2(-spot.x, -spot.z);
-      scene.add(model.group);
-      const homeCollider = { x: spot.x, z: spot.z, r: model.radius };
-      world.colliders.push(homeCollider);
+    const natives = ANIMALS.filter((d) => (d.area || 'catchup') === world.area.id);
+    this.list = natives.map((data) => this.create(data, world.zones[data.spot]));
+    if (companionId) {
+      let a = this.byId(companionId);
+      if (!a && ANIMAL_BY_ID[companionId]) {
+        const at = arrival || world.zones.spawn;
+        a = this.create(ANIMAL_BY_ID[companionId], { x: at.x + 1.5, z: at.z + 1.5 }, true);
+        this.list.push(a);
+      }
+      if (a) {
+        this.startFollow(a);
+        // 손님은 나무·횃대 같은 소품은 두고 와요
+        if (a.visitor && a.model.group !== a.model.character) a.model.group.visible = false;
+      }
+    }
+  }
+
+  create(data, spot, visitor = false) {
+    const world = this.world;
+    const model = MODELS[data.model](data);
+    const y = world.heightAt(spot.x, spot.z);
+    model.group.position.set(spot.x, y, spot.z);
+    model.group.rotation.y = Math.atan2(-spot.x, -spot.z);
+    world.root.add(model.group);
+    const homeCollider = { x: spot.x, z: spot.z, r: visitor ? 0 : model.radius };
+    world.colliders.push(homeCollider);
+    if (!visitor) {
       for (const c of model.colliders || []) {
         const cos = Math.cos(model.group.rotation.y);
         const sin = Math.sin(model.group.rotation.y);
         world.colliders.push({ x: spot.x + c.x * cos + c.z * sin, z: spot.z - c.x * sin + c.z * cos, r: c.r });
       }
-      const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, depthTest: false }));
-      bubble.renderOrder = 10;
-      bubble.visible = false;
-      scene.add(bubble);
-      const ch = model.character;
-      return {
-        data,
-        model,
-        bubble,
-        homeCollider,
-        home: model.group.position,
-        pos: new THREE.Vector3().copy(model.group.position),
-        phase: Math.random() * 10,
-        bubbleTimer: 2 + Math.random() * 4,
-        bubbleShown: 0,
-        talking: false,
-        talkLevel: 0,
-        following: false,
-        moving: 0,
-        sulking: false,
-        restore: { parent: ch.parent, pos: ch.position.clone(), quat: ch.quaternion.clone() },
-        groundOffset: 0,
-      };
-    });
+    }
+    const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, depthTest: false }));
+    bubble.renderOrder = 10;
+    bubble.visible = false;
+    world.root.add(bubble);
+    const ch = model.character;
+    return {
+      data,
+      model,
+      bubble,
+      visitor,
+      homeCollider,
+      home: model.group.position,
+      pos: new THREE.Vector3().copy(model.group.position),
+      phase: Math.random() * 10,
+      bubbleTimer: 2 + Math.random() * 4,
+      bubbleShown: 0,
+      talking: false,
+      talkLevel: 0,
+      following: false,
+      moving: 0,
+      sulking: false,
+      restore: { parent: ch.parent, pos: ch.position.clone(), quat: ch.quaternion.clone() },
+      groundOffset: 0,
+    };
+  }
+
+  // 숲을 떠날 때 정리
+  dispose() {
+    for (const a of this.list) if (a.following) disposeObject(a.model.character);
+    this.list = [];
+    this.follower = null;
   }
 
   byId(id) {
@@ -600,6 +938,14 @@ export class AnimalManager {
 
   stopFollow(a) {
     const ch = a.model.character;
+    if (a.visitor) {
+      // 손님 친구는 자기 숲으로 돌아가요
+      disposeObject(ch);
+      a.bubble.visible = false;
+      this.list = this.list.filter((x) => x !== a);
+      if (this.follower === a) this.follower = null;
+      return;
+    }
     a.restore.parent.add(ch);
     ch.position.copy(a.restore.pos);
     ch.quaternion.copy(a.restore.quat);
@@ -700,10 +1046,12 @@ export class AnimalManager {
     }
   }
 
-  findTalkable(pos, range = 3.6) {
+  // skipFollower: 같이 다니는 친구(안 삐졌을 때)는 빼고 찾기
+  findTalkable(pos, range = 3.6, skipFollower = false) {
     let best = null;
     let bestD = Infinity;
     for (const a of this.list) {
+      if (skipFollower && a.following && !a.sulking) continue;
       const d = Math.hypot(a.pos.x - pos.x, a.pos.z - pos.z) - a.model.radius;
       if (d < range && d < bestD) {
         bestD = d;

@@ -181,6 +181,54 @@ export class Sprout {
       this.root.add(pad);
     }
 
+    // 오엉 친구: 귀깃 잎
+    if (has('tuft')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#8a7560', roughness: 0.8 });
+      for (const s of [-1, 1]) {
+        const t = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.1, 5), m);
+        t.position.set(0.045 * s, stemH + 0.04, 0.02);
+        t.rotation.z = -0.4 * s;
+        this.root.add(t);
+      }
+    }
+
+    // 쿼카 친구: 웃는 잎
+    if (has('smile')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#ff9aa8', roughness: 0.6 });
+      const arc = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI), m);
+      arc.rotation.z = Math.PI;
+      arc.position.set(0, stemH * 0.55, 0.05);
+      this.root.add(arc);
+    }
+
+    // 미어캣 친구: 거울 잎
+    if (has('mirror')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#dfe8ef', roughness: 0.1, metalness: 0.9 });
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.045, 14), m);
+      disc.position.set(0.1, stemH * 0.7, 0.02);
+      disc.rotation.y = -0.5;
+      this.root.add(disc);
+    }
+
+    // 쉬뱀 친구: 줄기를 감은 똬리 덩굴
+    if (has('coil')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#9ad66a', roughness: 0.6 });
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 6, 14), m);
+      coil.rotation.x = Math.PI / 2;
+      coil.position.y = stemH * 0.25;
+      this.root.add(coil);
+    }
+
+    // 진짜냐 친구: 지느러미 잎
+    if (has('fin')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#e2453c', roughness: 0.6 });
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 3), m);
+      fin.scale.z = 0.3;
+      fin.position.set(-0.07, stemH * 0.8, 0);
+      fin.rotation.z = 0.8;
+      this.root.add(fin);
+    }
+
     // 최고 레벨: 꼭대기에 꽃봉오리
     if (level >= 5) {
       const bud = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshStandardMaterial({ color: '#ff9ec4', roughness: 0.6 }));

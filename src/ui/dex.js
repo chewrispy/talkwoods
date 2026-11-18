@@ -3,6 +3,7 @@ import { ANIMALS, HEARTS_TO_FRIEND, ANIMAL_BY_ID } from '../data/animals.js';
 import { RECIPES, recipeFor } from '../data/recipes.js';
 import { josa } from '../util/josa.js';
 import { FRUITS } from '../data/tones.js';
+import { AREA_BY_ID } from '../data/areas.js';
 import { levelFor, traitsFor, totalCaught, nextLevelAt, MAX_LEVEL, MARK_TRAITS, MARK_TRAIT_COUNT } from '../data/growth.js';
 
 export class Dex {
@@ -67,7 +68,7 @@ export class Dex {
       const met = this.save.met[a.id];
       const h = this.save.hearts[a.id] || 0;
       if (!met) {
-        return `<div class="dex-card unknown"><div class="dex-mark">?</div><div class="dex-body"><div class="dex-name">???</div><div class="dex-desc">숲 어딘가에서 누군가 혼잣말을 하고 있어요.</div></div></div>`;
+        return `<div class="dex-card unknown"><div class="dex-mark">?</div><div class="dex-body"><div class="dex-name">???</div><div class="dex-desc">${AREA_BY_ID[a.area || 'catchup'].name} 어딘가에서 누군가 혼잣말을 하고 있어요.</div></div></div>`;
       }
       const like = INSECTS.find((t) => t.id === a.likes);
       const hearts = Array.from({ length: HEARTS_TO_FRIEND }, (_, i) => (i < h ? '♥' : '♡')).join('');

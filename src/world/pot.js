@@ -6,7 +6,7 @@ export function createPot(scene, world) {
   const g = new THREE.Group();
   const y = world.heightAt(z.x, z.z);
   g.position.set(z.x, y, z.z);
-  scene.add(g);
+  world.root.add(g);
 
   const stoneMat = new THREE.MeshStandardMaterial({ color: '#8f8b80', roughness: 1, flatShading: true });
   const stoneGeo = new THREE.DodecahedronGeometry(0.22, 0);

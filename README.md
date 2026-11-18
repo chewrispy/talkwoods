@@ -32,6 +32,15 @@
 - 시간대별 말투: 노을 질 때 로맨틱, 새벽에 센치한 말이 35% 확률로 나감 (열매가 우선)
 - 대화창에 내가 한 말 표시
 
+## v0.5 추가
+- 숲 구성 (`src/data/areas.js`): 숲마다 지형·색·분위기와 그 숲에서만 만나는 친구
+  - 근황의 숲 (Catch-up Grove): 출발 숲. 숲길 표지판으로 이동
+  - 귓속말의 숲 (Whisper Hollow): 보랏빛 안개, 빛나는 버섯 / 오엉(부엉이), 쿼카
+  - 싸움의 숲 (Quarrel Canyon): 붉은 바위 / 미어캣(아니시에이팅), 쉬뱀, 진짜냐(피라냐 떼)
+  - 연애·꼰대·비난·토론의 숲: 준비 중
+- 같이 다니는 친구는 다른 숲에도 따라와요
+- 배경음악 (`src/audio/music.js`): 파일 없이 Web Audio로 직접 연주. 숲마다 다른 곡, 밤엔 조용하게, 🎵 버튼으로 끄기
+
 ## 실행하기
 ```bash
 npm install
@@ -60,6 +69,7 @@ src/
 - `talkwoods.goTo('pond')` 장소로 이동 (`meadow`, `pond`, `stumps`, `spawn`, `grottaHill`, `anyongPerch`, `slothNook`)
 - `talkwoods.give('ant', 3)` 곤충 받기 (테스트용)
 - `talkwoods.befriend('mar')` 바로 친구 되기 (테스트용)
+- `talkwoods.area('whisper')` 숲 이동 (`catchup`, `whisper`, `fight`)
 - `talkwoods.eat('nemo')` 열매 바로 먹기 (`nemo`, `semo`, `donggeul`)
 
 ## 다음 단계 아이디어

@@ -1,28 +1,6 @@
 import * as THREE from 'three';
 
-// 숲의 주요 장소들 — 곤충 데이터의 zone 이름과 연결돼요.
-export const ZONES = {
-  spawn: { x: 0, z: 0, r: 5 },
-  meadow: { x: 17, z: -12, r: 8 }, // 꽃밭
-  pond: { x: -15, z: 14, r: 6.5 }, // 연못
-  stumps: { x: -12, z: -15, r: 6 }, // 그루터기 공터
-  // 동물 친구 자리
-  grottaHill: { x: 9, z: -4, r: 3 },
-  anyongPerch: { x: -7, z: 7, r: 2.2 },
-  slothNook: { x: -4, z: -20, r: 2.5 },
-  yukaguriTree: { x: 20, z: 8, r: 2.5 },
-  graesoField: { x: 3, z: 21, r: 3 },
-  marRun: { x: -24, z: -4, r: 3 },
-  sunhamaBank: { x: -10.3, z: 18.8, r: 2.2 },
-  // 문장 냄비
-  pot: { x: -4, z: -3, r: 2.2 },
-  // 말투 열매 덤불
-  nemoBush: { x: 13, z: 11, r: 1.6 },
-  semoBush: { x: -18, z: -24, r: 1.6 },
-  donggeulBush: { x: -1, z: 12, r: 1.6 },
-};
-
-const WORLD_RADIUS = 56; // 플레이어가 갈 수 있는 반경
+// 숲 맵 만들기. area(data/areas.js)마다 지형·색·장소가 달라요.
 
 export function mulberry32(seed) {
   return function () {
@@ -38,40 +16,47 @@ function smoothstep(a, b, x) {
   return t * t * (3 - 2 * t);
 }
 
-export function heightAt(x, z) {
-  let h = 0.7 * Math.sin(x * 0.075) * Math.cos(z * 0.065) + 0.35 * Math.sin(x * 0.17 + z * 0.13) + 0.2 * Math.cos(z * 0.21 - x * 0.05);
-  // 연못은 오목하게
-  const p = ZONES.pond;
-  const dp = Math.hypot(x - p.x, z - p.z);
-  const k = 1 - smoothstep(p.r - 1.5, p.r + 3, dp);
-  h = h * (1 - k) + -0.9 * k;
-  // 가장자리는 살짝 언덕처럼
-  const d = Math.hypot(x, z);
-  h += smoothstep(WORLD_RADIUS - 6, WORLD_RADIUS + 10, d) * 3.5;
-  return h;
-}
+const pickFrom = (rand, arr) => arr[Math.floor(rand() * arr.length)];
 
-function inZone(x, z, margin = 0) {
-  for (const key in ZONES) {
-    const zn = ZONES[key];
-    if (Math.hypot(x - zn.x, z - zn.z) < zn.r + margin) return true;
-  }
-  return false;
-}
-
-export function createForest(scene) {
-  const rand = mulberry32(20261118);
+export function createForest(scene, area) {
+  const ZONES = area.zones;
+  const R = area.radius;
+  const pal = area.palette;
+  const rand = mulberry32(area.seed);
   const colliders = [];
+  const root = new THREE.Group();
+  scene.add(root);
+  const animated = [];
+
+  const phase = area.id === 'catchup' ? 0 : area.seed % 7;
+  function heightAt(x, z) {
+    let h = 0.7 * Math.sin(x * 0.075 + phase) * Math.cos(z * 0.065) + 0.35 * Math.sin(x * 0.17 + z * 0.13 + phase) + 0.2 * Math.cos(z * 0.21 - x * 0.05);
+    const p = ZONES.pond;
+    const dp = Math.hypot(x - p.x, z - p.z);
+    const k = 1 - smoothstep(p.r - 1.5, p.r + 3, dp);
+    h = h * (1 - k) + -0.9 * k;
+    const d = Math.hypot(x, z);
+    h += smoothstep(R - 6, R + 10, d) * 3.5;
+    return h;
+  }
+
+  function inZone(x, z, margin = 0) {
+    for (const key in ZONES) {
+      const zn = ZONES[key];
+      if (Math.hypot(x - zn.x, z - zn.z) < zn.r + margin) return true;
+    }
+    return false;
+  }
 
   // ── 땅 ──
-  const size = 170;
+  const size = R * 2 + 60;
   const groundGeo = new THREE.PlaneGeometry(size, size, 140, 140);
   groundGeo.rotateX(-Math.PI / 2);
   const pos = groundGeo.attributes.position;
   const colors = [];
-  const cA = new THREE.Color('#6f9a4a');
-  const cB = new THREE.Color('#9dbb5a');
-  const cDirt = new THREE.Color('#8a7350');
+  const cA = new THREE.Color(pal.ground[0]);
+  const cB = new THREE.Color(pal.ground[1]);
+  const cDirt = new THREE.Color(pal.dirt);
   const tmp = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
@@ -88,22 +73,21 @@ export function createForest(scene) {
   groundGeo.computeVertexNormals();
   const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
   ground.receiveShadow = true;
-  scene.add(ground);
+  root.add(ground);
 
   // ── 연못 ──
   const p = ZONES.pond;
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(p.r + 0.6, 48),
-    new THREE.MeshStandardMaterial({ color: '#5aa3c4', roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.88 })
+    new THREE.MeshStandardMaterial({ color: pal.water, roughness: 0.08, metalness: 0.2, transparent: true, opacity: 0.88 })
   );
   water.rotation.x = -Math.PI / 2;
   water.position.set(p.x, -0.35, p.z);
-  scene.add(water);
+  root.add(water);
   colliders.push({ x: p.x, z: p.z, r: p.r - 0.4 });
 
-  // 연못가 돌
   const stoneGeo = new THREE.DodecahedronGeometry(0.45, 0);
-  const stoneMat = new THREE.MeshStandardMaterial({ color: '#9a9a8e', roughness: 1, flatShading: true });
+  const stoneMat = new THREE.MeshStandardMaterial({ color: pal.rock, roughness: 1, flatShading: true });
   for (let i = 0; i < 18; i++) {
     const a = (i / 18) * Math.PI * 2 + rand() * 0.2;
     const r = p.r + 0.6 + rand() * 0.5;
@@ -114,7 +98,7 @@ export function createForest(scene) {
     st.scale.setScalar(0.6 + rand() * 0.7);
     st.rotation.set(rand() * 3, rand() * 3, rand() * 3);
     st.castShadow = true;
-    scene.add(st);
+    root.add(st);
   }
 
   // ── 그루터기 ──
@@ -123,21 +107,18 @@ export function createForest(scene) {
   const stumpMat = new THREE.MeshStandardMaterial({ color: '#7b5a3a', roughness: 1 });
   const ringMat = new THREE.MeshStandardMaterial({ color: '#d8b98a', roughness: 1 });
   const ringGeo = new THREE.CircleGeometry(0.52, 12);
-  const stumpSpots = [
-    [0, 0], [2.6, 1.4], [-2.2, 2.1], [1.2, -2.8], [-2.8, -1.6],
-  ];
-  for (const [ox, oz] of stumpSpots) {
+  for (const [ox, oz] of [[0, 0], [2.6, 1.4], [-2.2, 2.1], [1.2, -2.8], [-2.8, -1.6]]) {
     const x = s.x + ox;
     const z = s.z + oz;
     const y = heightAt(x, z);
     const st = new THREE.Mesh(stumpGeo, stumpMat);
     st.position.set(x, y + 0.25, z);
     st.castShadow = st.receiveShadow = true;
-    scene.add(st);
+    root.add(st);
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(x, y + 0.53, z);
-    scene.add(ring);
+    root.add(ring);
     colliders.push({ x, z, r: 0.7 });
   }
 
@@ -146,17 +127,17 @@ export function createForest(scene) {
   const tryAddTree = (x, z) => {
     if (inZone(x, z, 2.2)) return;
     for (const t of treeSpots) if (Math.hypot(t.x - x, t.z - z) < 2.6) return;
-    treeSpots.push({ x, z, kind: rand() < 0.55 ? 'pine' : 'round', s: 0.8 + rand() * 0.6 });
+    treeSpots.push({ x, z, kind: rand() < area.pineRatio ? 'pine' : 'round', s: 0.8 + rand() * 0.6 });
   };
-  for (let i = 0; i < 900 && treeSpots.length < 150; i++) {
+  for (let i = 0; i < 900 && treeSpots.length < area.trees; i++) {
     const a = rand() * Math.PI * 2;
-    const r = 7 + Math.sqrt(rand()) * 48;
+    const r = 7 + Math.sqrt(rand()) * (R - 8);
     tryAddTree(Math.cos(a) * r, Math.sin(a) * r);
   }
-  // 경계를 두르는 빽빽한 숲
-  for (let i = 0; i < 260; i++) {
-    const a = (i / 260) * Math.PI * 2 + rand() * 0.02;
-    const r = WORLD_RADIUS + 2 + rand() * 14;
+  const ringCount = Math.round(R * 4.6);
+  for (let i = 0; i < ringCount; i++) {
+    const a = (i / ringCount) * Math.PI * 2 + rand() * 0.02;
+    const r = R + 2 + rand() * 14;
     tryAddTree(Math.cos(a) * r, Math.sin(a) * r);
   }
 
@@ -164,26 +145,25 @@ export function createForest(scene) {
   const rounds = treeSpots.filter((t) => t.kind === 'round');
   const trunkGeo = new THREE.CylinderGeometry(0.18, 0.28, 1.6, 7);
   trunkGeo.translate(0, 0.8, 0);
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#6b4b32', roughness: 1 });
-  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeSpots.length);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: '#6b4b32', roughness: 1 }), Math.max(1, treeSpots.length));
   trunks.castShadow = true;
-
-  const coneGeo = new THREE.ConeGeometry(1.35, 2.4, 8);
-  const pineMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9, flatShading: true });
-  const pineLayers = new THREE.InstancedMesh(coneGeo, pineMat, pines.length * 3);
+  const pineLayers = new THREE.InstancedMesh(
+    new THREE.ConeGeometry(1.35, 2.4, 8),
+    new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9, flatShading: true }),
+    Math.max(1, pines.length * 3)
+  );
   pineLayers.castShadow = true;
-
-  const crownGeo = new THREE.IcosahedronGeometry(1.5, 1);
-  const roundMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9, flatShading: true });
-  const crowns = new THREE.InstancedMesh(crownGeo, roundMat, rounds.length * 2);
+  const crowns = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1.5, 1),
+    new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9, flatShading: true }),
+    Math.max(1, rounds.length * 2)
+  );
   crowns.castShadow = true;
 
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const v = new THREE.Vector3();
   const sc = new THREE.Vector3();
-  const pineColors = ['#2f6b45', '#3b7a4c', '#2a5e44', '#447f50'];
-  const roundColors = ['#6ea24b', '#7fb04f', '#5e9446', '#93b957', '#c9a44a'];
   let ti = 0;
   let pi = 0;
   let ri = 0;
@@ -192,10 +172,10 @@ export function createForest(scene) {
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rand() * Math.PI * 2);
     m.compose(v.set(t.x, y, t.z), q, sc.set(t.s, t.s, t.s));
     trunks.setMatrixAt(ti++, m);
-    if (Math.hypot(t.x, t.z) < WORLD_RADIUS + 3)
+    if (Math.hypot(t.x, t.z) < R + 3)
       colliders.push({ x: t.x, z: t.z, r: 0.45 * t.s, tree: true, canopy: 1.5 * t.s, top: y + 4.6 * t.s });
     if (t.kind === 'pine') {
-      const col = new THREE.Color(pineColors[Math.floor(rand() * pineColors.length)]);
+      const col = new THREE.Color(pickFrom(rand, pal.pine));
       for (let k = 0; k < 3; k++) {
         const layerS = t.s * (1 - k * 0.22);
         m.compose(v.set(t.x, y + t.s * (2.0 + k * 1.05), t.z), q, sc.set(layerS, layerS, layerS));
@@ -203,7 +183,7 @@ export function createForest(scene) {
         pineLayers.setColorAt(pi++, col);
       }
     } else {
-      const col = new THREE.Color(roundColors[Math.floor(rand() * roundColors.length)]);
+      const col = new THREE.Color(pickFrom(rand, pal.round));
       m.compose(v.set(t.x, y + t.s * 2.6, t.z), q, sc.set(t.s * 1.1, t.s, t.s * 1.1));
       crowns.setMatrixAt(ri, m);
       crowns.setColorAt(ri++, col);
@@ -214,19 +194,20 @@ export function createForest(scene) {
       crowns.setColorAt(ri++, col.clone().offsetHSL(0, 0, 0.05));
     }
   }
-  scene.add(trunks, pineLayers, crowns);
+  trunks.count = ti;
+  pineLayers.count = pi;
+  crowns.count = ri;
+  root.add(trunks, pineLayers, crowns);
 
   // ── 풀 ──
   const grassGeo = new THREE.ConeGeometry(0.07, 0.45, 3);
   grassGeo.translate(0, 0.2, 0);
-  const grassMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1 });
-  const GRASS = 1400;
-  const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS);
-  const grassCols = ['#5f8f3e', '#76a548', '#8db552', '#6b9a40'];
+  const GRASS = Math.round(1400 * (R / 56) ** 2);
+  const grass = new THREE.InstancedMesh(grassGeo, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1 }), GRASS);
   let gi = 0;
   while (gi < GRASS) {
     const a = rand() * Math.PI * 2;
-    const r = Math.sqrt(rand()) * (WORLD_RADIUS + 4);
+    const r = Math.sqrt(rand()) * (R + 4);
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     if (Math.hypot(x - p.x, z - p.z) < p.r + 0.8) continue;
@@ -234,9 +215,9 @@ export function createForest(scene) {
     q.setFromEuler(new THREE.Euler((rand() - 0.5) * 0.4, rand() * 3, (rand() - 0.5) * 0.4));
     m.compose(v.set(x, heightAt(x, z) - 0.02, z), q, sc.set(sz, sz, sz));
     grass.setMatrixAt(gi, m);
-    grass.setColorAt(gi++, new THREE.Color(grassCols[Math.floor(rand() * grassCols.length)]));
+    grass.setColorAt(gi++, new THREE.Color(pickFrom(rand, pal.grass)));
   }
-  scene.add(grass);
+  root.add(grass);
 
   // ── 꽃밭 ──
   const md = ZONES.meadow;
@@ -246,18 +227,16 @@ export function createForest(scene) {
   const FLOWERS = 220;
   const petals = new THREE.InstancedMesh(petalGeo, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.7 }), FLOWERS);
   const stems = new THREE.InstancedMesh(stemGeo, new THREE.MeshStandardMaterial({ color: '#4f7f36' }), FLOWERS);
-  const flowerCols = ['#ffd1e1', '#ffe680', '#ffffff', '#c9b6ff', '#ffb38a', '#ff8fb1'];
   for (let i = 0; i < FLOWERS; i++) {
-    const inMeadow = i < 190;
     const a = rand() * Math.PI * 2;
     let x;
     let z;
-    if (inMeadow) {
+    if (i < 190) {
       const r = Math.sqrt(rand()) * md.r;
       x = md.x + Math.cos(a) * r;
       z = md.z + Math.sin(a) * r;
     } else {
-      const r = 6 + rand() * 44;
+      const r = 6 + rand() * (R - 12);
       x = Math.cos(a) * r;
       z = Math.sin(a) * r;
     }
@@ -267,26 +246,75 @@ export function createForest(scene) {
     stems.setMatrixAt(i, m);
     m.compose(v.set(x, y + 0.4 * h, z), q.identity(), sc.set(1, 0.7, 1));
     petals.setMatrixAt(i, m);
-    petals.setColorAt(i, new THREE.Color(flowerCols[Math.floor(rand() * flowerCols.length)]));
+    petals.setColorAt(i, new THREE.Color(pickFrom(rand, pal.flowers)));
   }
-  scene.add(stems, petals);
+  root.add(stems, petals);
 
   // ── 바위 ──
-  for (let i = 0; i < 26; i++) {
+  const bigRock = area.id === 'fight';
+  for (let i = 0; i < area.rocks; i++) {
     const a = rand() * Math.PI * 2;
-    const r = 8 + rand() * 46;
+    const r = 8 + rand() * (R - 10);
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     if (inZone(x, z, 1)) continue;
     const rock = new THREE.Mesh(stoneGeo, stoneMat);
-    const rs = 0.8 + rand() * 1.4;
-    rock.scale.set(rs, rs * 0.7, rs);
+    const rs = bigRock ? 1.2 + rand() * 2.6 : 0.8 + rand() * 1.4;
+    rock.scale.set(rs, rs * (bigRock ? 1.1 + rand() : 0.7), rs);
     rock.position.set(x, heightAt(x, z), z);
     rock.rotation.set(rand(), rand() * 3, rand());
     rock.castShadow = rock.receiveShadow = true;
-    scene.add(rock);
+    root.add(rock);
     colliders.push({ x, z, r: 0.42 * rs });
   }
 
-  return { heightAt, colliders, boundary: WORLD_RADIUS, zones: ZONES };
+  // ── 빛나는 버섯 (귓속말의 숲) ──
+  if (area.features.includes('mushrooms')) {
+    const capGeo = new THREE.SphereGeometry(0.22, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    const stalkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.3, 6);
+    stalkGeo.translate(0, 0.15, 0);
+    const caps = ['#b9a6ff', '#8fe3ff', '#ffb3f0'];
+    for (let i = 0; i < 46; i++) {
+      const a = rand() * Math.PI * 2;
+      const r = 5 + rand() * (R - 8);
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      if (inZone(x, z, 0.5)) continue;
+      const g = new THREE.Group();
+      const col = pickFrom(rand, caps);
+      const stalk = new THREE.Mesh(stalkGeo, new THREE.MeshStandardMaterial({ color: '#efe6d8' }));
+      const cap = new THREE.Mesh(capGeo, new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.8 }));
+      cap.position.y = 0.28;
+      g.add(stalk, cap);
+      g.scale.setScalar(0.6 + rand() * 1.1);
+      g.position.set(x, heightAt(x, z), z);
+      root.add(g);
+      animated.push({ cap, base: 0.6 + rand() * 0.4, off: rand() * 6 });
+    }
+  }
+
+  return {
+    area,
+    heightAt,
+    colliders,
+    boundary: R,
+    zones: ZONES,
+    root,
+    update(t) {
+      for (const a of animated) a.cap.material.emissiveIntensity = a.base + Math.sin(t * 1.5 + a.off) * 0.35;
+    },
+  };
+}
+
+// 숲을 치울 때 메모리도 같이 정리해요
+export function disposeObject(obj) {
+  obj.parent?.remove(obj);
+  obj.traverse((o) => {
+    o.geometry?.dispose?.();
+    const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+    for (const mt of mats) {
+      mt.map?.dispose?.();
+      mt.dispose?.();
+    }
+  });
 }

@@ -98,7 +98,7 @@ export class Dialogue {
     const btns = [];
     if (an.sulking) btns.push('<button type="button" data-act="pat" class="pat">우쭈쭈 🤍</button>');
     btns.push('<button type="button" data-act="talk">또 말 걸기</button>');
-    if (friend && !an.following) btns.push('<button type="button" data-act="follow">같이 다니자</button>');
+    if (friend && !an.following && !a.noFollow) btns.push('<button type="button" data-act="follow">같이 다니자</button>');
     if (an.following) btns.push('<button type="button" data-act="stay">여기서 쉬어</button>');
     btns.push('<button type="button" data-act="bye" class="dlg-bye">안녕!</button>');
     this.actionsEl.innerHTML = btns.join('');

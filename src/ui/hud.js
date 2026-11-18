@@ -1,11 +1,13 @@
 export class Hud {
-  constructor(root, { isTouch, onCatch, onOpenDex }) {
+  constructor(root, { isTouch, onCatch, onOpenDex, onMusic, musicOn = true }) {
     this.isTouch = isTouch;
     this.el = document.createElement('div');
     this.el.className = 'hud';
     this.el.innerHTML = `
       <div class="hud-time"><span class="hud-time-icon"></span><span class="hud-time-text"></span></div>
       <button class="hud-dex" type="button">📖 수첩 <span class="hud-dex-count"></span></button>
+      <button class="hud-music" type="button" aria-label="배경음악"></button>
+      <div class="hud-banner"><div class="hb-ko"></div><div class="hb-en"></div></div>
       <button class="hud-catch" type="button"></button>
       <div class="hud-tone"></div>
       <div class="hud-toasts"></div>
@@ -20,6 +22,18 @@ export class Hud {
     this.toasts = this.el.querySelector('.hud-toasts');
     this.hint = this.el.querySelector('.hud-hint');
     this.toneEl = this.el.querySelector('.hud-tone');
+    this.musicBtn = this.el.querySelector('.hud-music');
+    const setMusic = (on) => (this.musicBtn.textContent = on ? '🎵' : '🔇');
+    setMusic(musicOn);
+    this.musicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMusic(onMusic());
+    });
+    this.musicBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.bannerEl = this.el.querySelector('.hud-banner');
+    this.fader = document.createElement('div');
+    this.fader.className = 'fader';
+    root.appendChild(this.fader);
     this.targetId = null;
 
     this.catchBtn.addEventListener('click', (e) => {
@@ -62,6 +76,24 @@ export class Hud {
     this._tone = key;
     this.toneEl.innerHTML = `<b style="color:${fruit.color}">${fruit.icon}</b>${fruit.name.replace(' 열매', '')} 말투 · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
     this.toneEl.classList.add('on');
+  }
+
+  // 숲에 들어서면 이름이 크게 떠요
+  banner(ko, en) {
+    this.bannerEl.querySelector('.hb-ko').textContent = ko;
+    this.bannerEl.querySelector('.hb-en').textContent = en;
+    this.bannerEl.classList.remove('show');
+    void this.bannerEl.offsetWidth;
+    this.bannerEl.classList.add('show');
+  }
+
+  // 화면을 잠깐 어둡게 했다가 밝히기 (숲 이동)
+  fade(midway) {
+    this.fader.classList.add('on');
+    setTimeout(() => {
+      midway();
+      setTimeout(() => this.fader.classList.remove('on'), 120);
+    }, 520);
   }
 
   setDexCount(found, total) {

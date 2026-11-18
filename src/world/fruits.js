@@ -7,7 +7,7 @@ export function createFruitBushes(scene, world) {
     const z = world.zones[f.spot];
     const g = new THREE.Group();
     g.position.set(z.x, world.heightAt(z.x, z.z), z.z);
-    scene.add(g);
+    world.root.add(g);
     const leafMat = new THREE.MeshStandardMaterial({ color: '#4f8a3c', roughness: 0.9, flatShading: true });
     [[0, 0.55, 0, 0.75], [0.5, 0.45, 0.2, 0.55], [-0.45, 0.45, -0.1, 0.6], [0.1, 0.5, -0.45, 0.5]].forEach(([x, y, zz, r]) => {
       const b = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), leafMat);

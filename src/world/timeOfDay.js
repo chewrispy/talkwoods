@@ -61,6 +61,13 @@ export class TimeOfDay {
     this.update(0, new THREE.Vector3());
   }
 
+  // 숲마다 하늘·안개 분위기 색을 섞어요
+  setArea(area) {
+    this.tint = area.tint ? { color: new THREE.Color(area.tint.color), amount: area.tint.amount } : null;
+    this.scene.fog.near = area.tint?.fogNear ?? 18;
+    this.scene.fog.far = area.tint?.fogFar ?? 75;
+  }
+
   get elevation() {
     return Math.sin(this.t * Math.PI * 2);
   }
@@ -100,6 +107,11 @@ export class TimeOfDay {
       const k = smoothstep(0, 0.3, -e);
       this.sky.copy(SKY.dusk).lerp(SKY.night, k);
       this.scene.fog.color.copy(FOG.dusk).lerp(FOG.night, k);
+    }
+
+    if (this.tint) {
+      this.sky.lerp(this.tint.color, this.tint.amount);
+      this.scene.fog.color.lerp(this.tint.color, this.tint.amount);
     }
 
     // 해

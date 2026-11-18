@@ -24,6 +24,11 @@ const FAV_NAMES = {
   graeso: { name: '묵직한 되물음', desc: '다 듣고 나서 조용히 꺼내는 한마디.' },
   mar: { name: '삐진 한숨', desc: '알아달라는 신호. 우쭈쭈가 필요하다.' },
   sunhama: { name: '정중한 협박', desc: '평화를 지키기 위한 단호한 부탁.' },
+  oeong: { name: '반짝 추임새', desc: '의견은 없지만 듣는 사람을 신나게 만드는 한마디.' },
+  quokka: { name: '행복한 웃음', desc: '듣기만 해도 위로가 되는 소리. 가끔 돈이 든다.' },
+  meerkat: { name: '메아리 도발', desc: '상대 말을 그대로 돌려주는 묘하게 열받는 문장.' },
+  shibaem: { name: '시원한 한마디', desc: '내용은 없는데 속은 시원하다.' },
+  jinjjanya: { name: '떼창 의심', desc: '혼자 하면 의심, 떼로 하면 공격.' },
 };
 
 export const RECIPES = [

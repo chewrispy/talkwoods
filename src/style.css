@@ -685,3 +685,95 @@ body {
 .hud-tone b {
   margin-right: 4px;
 }
+
+/* ── 숲 이동 ── */
+.hud-music {
+  position: absolute;
+  top: calc(max(14px, env(safe-area-inset-top)) + 46px);
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(181, 143, 69, 0.6);
+  background: rgba(247, 238, 219, 0.92);
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.hud-banner {
+  position: absolute;
+  top: 26%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff6e3;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+.hud-banner.show {
+  animation: bannerShow 3.6s ease forwards;
+}
+.hb-ko {
+  font-size: clamp(30px, 8vw, 52px);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  padding-left: 0.25em;
+}
+.hb-en {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: clamp(16px, 4vw, 24px);
+  margin-top: 6px;
+  color: #f1dca8;
+}
+@keyframes bannerShow {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  18%,
+  70% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.fader {
+  position: fixed;
+  inset: 0;
+  background: #0d130f;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.fader.on {
+  opacity: 1;
+}
+.tr-act {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.tr-go {
+  font-family: 'Gowun Batang', serif;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid #b58f45;
+  background: linear-gradient(180deg, #fff6df, #ecd9ae);
+  cursor: pointer;
+  color: var(--ink);
+}
+.tr-here {
+  font-size: 12px;
+  color: #3f6b2a;
+  background: #e9f5dc;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.tr-soon {
+  font-size: 12px;
+  color: #8a7a66;
+}

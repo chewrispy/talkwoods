@@ -17,12 +17,13 @@ export function loadSave() {
         sentences: data.sentences || {},
         recipes: data.recipes || {},
         companion: data.companion || null,
+        area: data.area || 'catchup',
       };
     }
   } catch (e) {
     /* 저장소를 쓸 수 없는 환경이면 새로 시작 */
   }
-  return { caught: {}, firstCaughtAt: {}, inventory: {}, hearts: {}, met: {}, words: [], sentences: {}, recipes: {}, companion: null };
+  return { caught: {}, firstCaughtAt: {}, inventory: {}, hearts: {}, met: {}, words: [], sentences: {}, recipes: {}, companion: null, area: 'catchup' };
 }
 
 export function writeSave(save) {

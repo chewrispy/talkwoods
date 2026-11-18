@@ -117,10 +117,11 @@ export class InsectManager {
     this.world = world;
     this.types = Object.fromEntries(INSECTS.map((t) => [t.id, t]));
     this.list = [];
-    for (const type of INSECTS) {
+    // 이 숲에 사는 곳이 있는 곤충만 나와요
+    for (const type of INSECTS.filter((t) => world.zones[t.zone])) {
       for (let i = 0; i < type.count; i++) {
         const { group, parts } = buildMesh(type);
-        scene.add(group);
+        world.root.add(group);
         const bug = {
           type,
           group,
