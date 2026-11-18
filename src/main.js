@@ -8,7 +8,11 @@ import { InsectManager } from './insects/insectManager.js';
 import { TitleScreen } from './ui/title.js';
 import { Hud } from './ui/hud.js';
 import { Dex } from './ui/dex.js';
+import { Dialogue } from './ui/dialogue.js';
+import { AnimalManager } from './animals/animalManager.js';
 import { INSECTS } from './data/insects.js';
+import { HEARTS_TO_FRIEND } from './data/animals.js';
+import { levelFor, traitsFor, growthKey } from './data/growth.js';
 import { loadSave, writeSave } from './storage.js';
 
 const canvas = document.getElementById('game');
@@ -37,13 +41,18 @@ const time = new TimeOfDay(scene, { dayLengthSeconds: 240, startAt: 0.07 });
 const player = new Player(scene, world);
 const controls = new Controls(canvas);
 const insects = new InsectManager(scene, world);
+const animals = new AnimalManager(scene, world);
 const save = loadSave();
+
+// 새싹 성장 상태
+let lastGrowth = growthKey(save);
+player.sprout.build(levelFor(save), traitsFor(save));
 
 let state = 'title';
 
 const hud = new Hud(uiRoot, {
   isTouch: controls.isTouch,
-  onCatch: () => tryCatch(),
+  onCatch: () => interact(),
   onOpenDex: () => dex.open(),
 });
 const dex = new Dex(uiRoot, save, {
@@ -57,6 +66,19 @@ const dex = new Dex(uiRoot, save, {
 });
 hud.setDexCount(dex.found, INSECTS.length);
 
+const dialogue = new Dialogue(uiRoot, {
+  save,
+  onTalk: (a) => talkTo(a),
+  onGift: (a, insectId) => giftTo(a, insectId),
+  onClose: (a) => {
+    if (a) {
+      a.talking = false;
+      a.talkLevel = 0;
+    }
+    if (state === 'play') controls.enabled = true;
+  },
+});
+
 new TitleScreen(uiRoot, () => {
   state = 'play';
   controls.enabled = true;
@@ -64,15 +86,103 @@ new TitleScreen(uiRoot, () => {
   hud.show();
 });
 
-controls.onAction(() => tryCatch());
+controls.onAction(() => interact());
 
-function tryCatch() {
-  if (state !== 'play') return;
+function currentTarget() {
+  const a = animals.findTalkable(player.position);
+  if (a) return { kind: 'animal', ref: a, id: 'a:' + a.data.id, html: `말 걸기 · ${a.data.name}` };
   const bug = insects.findCatchable(player.position);
-  if (!bug) return;
+  if (bug) return { kind: 'bug', ref: bug, id: 'b:' + bug.type.id + bug.group.id, html: `잡기 · ${bug.type.name} <b>${bug.type.mark}</b>` };
+  return null;
+}
+
+function interact() {
+  if (state !== 'play' || dialogue.isOpen) return;
+  const t = currentTarget();
+  if (!t) return;
+  if (t.kind === 'animal') openDialogue(t.ref);
+  else tryCatch(t.ref);
+}
+
+// 받침에 따라 조사 고르기: josa('그로타','와','과') → '그로타와'
+function josa(word, withoutBatchim, withBatchim) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  const has = code >= 0 && code <= 11171 && code % 28 !== 0;
+  return word + (has ? withBatchim : withoutBatchim);
+}
+
+function openDialogue(a) {
+  controls.enabled = false;
+  controls.reset();
+  // 동물과 새싹이 같이 보이도록 카메라 돌리기
+  const dir = Math.atan2(a.pos.x - player.position.x, a.pos.z - player.position.z);
+  player.facing = dir;
+  player.sync();
+  controls.yaw = dir + Math.PI + 0.55;
+  controls.pitch = Math.max(controls.pitch, 0.35);
+  hud.hideTarget();
+  a.talking = true;
+  a.talkLevel = 0;
+  const first = !save.met[a.data.id];
+  if (first) {
+    save.met[a.data.id] = true;
+    writeSave(save);
+  }
+  const line = a.data.lines[0];
+  animals.say(a, line, 2.5);
+  dialogue.open(a, first ? `${line}  (${a.data.desc})` : line);
+}
+
+function talkTo(a) {
+  const d = a.data;
+  if (d.escalate) {
+    a.talkLevel = Math.min(a.talkLevel + 1, d.lines.length - 1);
+  } else {
+    a.talkLevel = (a.talkLevel + 1 + Math.floor(Math.random() * (d.lines.length - 1))) % d.lines.length;
+  }
+  const line = d.lines[a.talkLevel];
+  animals.say(a, line, 2.5);
+  dialogue.render(line);
+}
+
+function giftTo(a, insectId) {
+  if (!(save.inventory[insectId] > 0)) return;
+  const d = a.data;
+  save.inventory[insectId] -= 1;
+  const before = save.hearts[d.id] || 0;
+  let line;
+  if (insectId === d.likes && before < HEARTS_TO_FRIEND) {
+    save.hearts[d.id] = before + 1;
+    line = save.hearts[d.id] >= HEARTS_TO_FRIEND ? d.friendLine : d.reactions.like;
+    if (save.hearts[d.id] >= HEARTS_TO_FRIEND) hud.toast(`💛 <b>${josa(d.name, '와', '과')}</b> 친구가 되었어요!`);
+  } else {
+    line = insectId === d.likes ? d.reactions.like : d.reactions.other;
+  }
+  writeSave(save);
+  animals.say(a, line.length > 16 ? line.slice(0, 15) + '…' : line, 2.8);
+  dialogue.render(line);
+  checkGrowth();
+}
+
+function checkGrowth() {
+  const key = growthKey(save);
+  if (key === lastGrowth) return;
+  const [oldLv, oldTraits] = lastGrowth.split('|');
+  lastGrowth = key;
+  const lv = levelFor(save);
+  const traits = traitsFor(save);
+  player.sprout.build(lv, traits);
+  if (lv > Number(oldLv)) hud.toast(`🌱 새싹이 자랐어요! <b>Lv.${lv}</b>`);
+  const had = oldTraits ? oldTraits.split(',') : [];
+  for (const t of traits) if (!had.includes(t.trait)) hud.toast(`🍃 새싹에 <b>${josa(t.name, '가', '이')}</b> 생겼어요`);
+}
+
+function tryCatch(bug) {
+  if (state !== 'play' || !bug) return;
   const first = !(save.caught[bug.type.id] > 0);
   insects.catch(bug);
   save.caught[bug.type.id] = (save.caught[bug.type.id] || 0) + 1;
+  save.inventory[bug.type.id] = (save.inventory[bug.type.id] || 0) + 1;
   if (first) save.firstCaughtAt[bug.type.id] = new Date().toISOString();
   writeSave(save);
   hud.setDexCount(dex.found, INSECTS.length);
@@ -82,7 +192,8 @@ function tryCatch() {
       : `<b>${bug.type.name}</b> <span class="mk">${bug.type.mark}</span> 를 잡았어요`
   );
   hud.pulseDex();
-  hud.setTarget(null);
+  hud.hideTarget();
+  checkGrowth();
 }
 
 // 카메라
@@ -150,9 +261,11 @@ function loop(ts) {
   if (state === 'play') {
     player.update(dt, controls.getMove(), controls.yaw);
     hud.setTime(time.label);
-    hud.setTarget(insects.findCatchable(player.position));
+    if (!dialogue.isOpen) hud.setTarget(currentTarget());
   }
   insects.update(dt, time.isDay);
+  animals.update(dt, player.position);
+  player.sprout.update(performance.now() / 1000);
   updateCamera(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
@@ -171,6 +284,16 @@ window.talkwoods = {
   },
   setTime: (t) => {
     time.t = t;
+  },
+  give: (id, n = 1) => {
+    save.caught[id] = (save.caught[id] || 0) + n;
+    save.inventory[id] = (save.inventory[id] || 0) + n;
+    writeSave(save);
+    hud.setDexCount(dex.found, INSECTS.length);
+    checkGrowth();
+  },
+  zoom: (d) => {
+    controls.distance = d;
   },
   goTo: (zone) => {
     const z = world.zones[zone];

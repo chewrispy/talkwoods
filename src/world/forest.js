@@ -6,6 +6,10 @@ export const ZONES = {
   meadow: { x: 17, z: -12, r: 8 }, // 꽃밭
   pond: { x: -15, z: 14, r: 6.5 }, // 연못
   stumps: { x: -12, z: -15, r: 6 }, // 그루터기 공터
+  // 동물 친구 자리
+  grottaHill: { x: 9, z: -4, r: 3 },
+  anyongPerch: { x: -7, z: 7, r: 2.2 },
+  slothNook: { x: -4, z: -20, r: 2.5 },
 };
 
 const WORLD_RADIUS = 56; // 플레이어가 갈 수 있는 반경

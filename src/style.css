@@ -419,3 +419,132 @@ body {
 .dex-card.unknown .dex-desc {
   color: #7a6a55;
 }
+
+/* ── 숲 수첩 추가 ── */
+.dex-section {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a6a2c;
+  letter-spacing: 0.15em;
+  margin: 6px 2px -2px;
+}
+.dex-hearts {
+  color: #e2607a;
+  letter-spacing: 1px;
+}
+.dex-card.sprout .dex-mark {
+  font-size: 28px;
+}
+
+/* ── 대화창 ── */
+.dialogue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px max(16px, env(safe-area-inset-bottom));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.dialogue.on {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.dlg-box {
+  width: min(520px, 100%);
+  background: var(--paper);
+  border: 1px solid #b58f45;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 5px var(--paper-2);
+  padding: 16px 18px 14px;
+}
+.dlg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.dlg-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+.dlg-kind {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8a6a2c;
+  margin-left: 4px;
+}
+.dlg-friend {
+  font-size: 12px;
+  font-weight: 400;
+  background: #ffe1a8;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 4px;
+}
+.dlg-hearts {
+  color: #e2607a;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+.dlg-line {
+  font-size: 17px;
+  line-height: 1.55;
+  margin: 10px 0 12px;
+  min-height: 1.6em;
+}
+.dlg-line.pop {
+  animation: dlgPop 0.25s ease;
+}
+@keyframes dlgPop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.dlg-gift-label {
+  font-size: 12px;
+  color: #8a6a2c;
+  margin-bottom: 6px;
+}
+.dlg-gift-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.dlg-gifts button,
+.dlg-actions button {
+  font-family: 'Gowun Batang', serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fffaf0;
+  border: 1px solid rgba(181, 143, 69, 0.7);
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.dlg-gifts button b {
+  font-family: 'IM Fell English', serif;
+  font-size: 17px;
+}
+.dlg-gifts button span {
+  color: #8a6a2c;
+  font-size: 12px;
+}
+.dlg-gifts button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.dlg-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.dlg-actions .dlg-bye {
+  background: linear-gradient(180deg, #fff6df, #ecd9ae);
+}

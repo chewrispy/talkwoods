@@ -9,6 +9,12 @@
 - 문장부호 곤충 채집: 개미(!) · 나비(?) · 반딧불이(…)
 - 곤충 도감 (브라우저에 저장돼요)
 
+## v0.2 추가
+- 동물 친구 3마리: 그로타(꽃밭 근처), 아뇽(연못 근처), 그럴스도(그루터기 근처 나뭇가지)
+- 말 걸기 · 선물하기 · 하트 3개면 친구 (`src/data/animals.js`)
+- 새싹 정령 성장: 곤충 수로 레벨업, 문장부호 3마리·친구마다 특성 잎 (`src/data/growth.js`, `src/player/sprout.js`)
+- 도감 → 숲 수첩 (나의 새싹 · 곤충 도감 · 숲 친구들)
+
 ## 실행하기
 ```bash
 npm install
@@ -34,7 +40,8 @@ src/
 
 ## 개발용 콘솔 명령
 - `talkwoods.setTime(0.8)` 밤으로 (0.25 한낮, 0.5 해 질 녘, 0.75 한밤)
-- `talkwoods.goTo('pond')` 장소로 이동 (`meadow`, `pond`, `stumps`, `spawn`)
+- `talkwoods.goTo('pond')` 장소로 이동 (`meadow`, `pond`, `stumps`, `spawn`, `grottaHill`, `anyongPerch`, `slothNook`)
+- `talkwoods.give('ant', 3)` 곤충 받기 (테스트용)
 
 ## 다음 단계 아이디어
 - 동물 친구들 (그로타, 아뇽, 그래소, 유카구리…)

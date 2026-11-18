@@ -5,12 +5,20 @@ export function loadSave() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      return { caught: data.caught || {}, firstCaughtAt: data.firstCaughtAt || {} };
+      const caught = data.caught || {};
+      return {
+        caught,
+        firstCaughtAt: data.firstCaughtAt || {},
+        // 예전 저장에는 가방이 없어서, 잡은 만큼 채워줘요
+        inventory: data.inventory || { ...caught },
+        hearts: data.hearts || {},
+        met: data.met || {},
+      };
     }
   } catch (e) {
     /* 저장소를 쓸 수 없는 환경이면 새로 시작 */
   }
-  return { caught: {}, firstCaughtAt: {} };
+  return { caught: {}, firstCaughtAt: {}, inventory: {}, hearts: {}, met: {} };
 }
 
 export function writeSave(save) {

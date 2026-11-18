@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Sprout } from './sprout.js';
 
 export class Player {
   constructor(scene, world) {
@@ -40,18 +41,10 @@ export class Player {
       g.add(b);
     }
 
-    // 머리 위 새싹
-    const leafMat = new THREE.MeshStandardMaterial({ color: '#6fbf4a', roughness: 0.8 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 5), leafMat);
-    stem.position.y = 1.32;
-    g.add(stem);
-    for (const s of [-1, 1]) {
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), leafMat);
-      leaf.scale.set(1.6, 0.45, 0.9);
-      leaf.position.set(0.09 * s, 1.41, 0);
-      leaf.rotation.z = -0.5 * s;
-      g.add(leaf);
-    }
+    // 머리 위 새싹 (레벨·특성에 따라 자라요)
+    this.sprout = new Sprout(g);
+    this.sprout.root.position.y = 1.27;
+    this.sprout.build(1, []);
 
     this.body = body;
     this.mesh = g;
@@ -108,5 +101,6 @@ export class Player {
     const bob = Math.abs(Math.sin(this.walkPhase)) * 0.08 * Math.min(1, mag * 2);
     this.body.position.y = 0.66 + bob;
     this.mesh.rotation.z = Math.sin(this.walkPhase) * 0.05 * mag;
+    this.sprout.root.position.y = 1.27 + bob;
   }
 }
