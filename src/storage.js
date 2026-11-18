@@ -13,12 +13,16 @@ export function loadSave() {
         inventory: data.inventory || { ...caught },
         hearts: data.hearts || {},
         met: data.met || {},
+        words: data.words || [],
+        sentences: data.sentences || {},
+        recipes: data.recipes || {},
+        companion: data.companion || null,
       };
     }
   } catch (e) {
     /* 저장소를 쓸 수 없는 환경이면 새로 시작 */
   }
-  return { caught: {}, firstCaughtAt: {}, inventory: {}, hearts: {}, met: {} };
+  return { caught: {}, firstCaughtAt: {}, inventory: {}, hearts: {}, met: {}, words: [], sentences: {}, recipes: {}, companion: null };
 }
 
 export function writeSave(save) {

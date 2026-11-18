@@ -3,11 +3,9 @@ import { HEARTS_TO_FRIEND } from '../data/animals.js';
 
 // 동물 친구와 대화하는 창
 export class Dialogue {
-  constructor(root, { save, onGift, onTalk, onClose }) {
+  constructor(root, { save, onGift, onGiftSentence, onTalk, onFollow, onStay, onPat, onClose }) {
     this.save = save;
-    this.onGift = onGift;
-    this.onTalk = onTalk;
-    this.onClose = onClose;
+    this.handlers = { onGift, onGiftSentence, onTalk, onFollow, onStay, onPat, onClose };
     this.animal = null;
     this.el = document.createElement('div');
     this.el.className = 'dialogue';
@@ -19,10 +17,7 @@ export class Dialogue {
         </div>
         <div class="dlg-line"></div>
         <div class="dlg-gifts"></div>
-        <div class="dlg-actions">
-          <button type="button" class="dlg-talk">또 말 걸기</button>
-          <button type="button" class="dlg-bye">안녕!</button>
-        </div>
+        <div class="dlg-actions"></div>
       </div>
     `;
     root.appendChild(this.el);
@@ -30,11 +25,22 @@ export class Dialogue {
     this.heartsEl = this.el.querySelector('.dlg-hearts');
     this.lineEl = this.el.querySelector('.dlg-line');
     this.giftsEl = this.el.querySelector('.dlg-gifts');
-    this.el.querySelector('.dlg-talk').addEventListener('click', () => this.onTalk(this.animal));
-    this.el.querySelector('.dlg-bye').addEventListener('click', () => this.close());
+    this.actionsEl = this.el.querySelector('.dlg-actions');
     this.giftsEl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-gift]');
-      if (b && !b.disabled) this.onGift(this.animal, b.dataset.gift);
+      if (b && !b.disabled) this.handlers.onGift(this.animal, b.dataset.gift);
+      const s = e.target.closest('[data-sentence]');
+      if (s && !s.disabled) this.handlers.onGiftSentence(this.animal, s.dataset.sentence);
+    });
+    this.actionsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'talk') this.handlers.onTalk(this.animal);
+      if (act === 'follow') this.handlers.onFollow(this.animal);
+      if (act === 'stay') this.handlers.onStay(this.animal);
+      if (act === 'pat') this.handlers.onPat(this.animal);
+      if (act === 'bye') this.close();
     });
     this.el.addEventListener('pointerdown', (e) => e.stopPropagation());
   }
@@ -61,17 +67,28 @@ export class Dialogue {
       void this.lineEl.offsetWidth;
       this.lineEl.classList.add('pop');
     }
-    const items = INSECTS.map((t) => {
+    const bugs = INSECTS.map((t) => {
       const n = this.save.inventory[t.id] || 0;
-      const known = (this.save.caught[t.id] || 0) > 0;
-      if (!known) return '';
-      return `<button type="button" data-gift="${t.id}" ${n ? '' : 'disabled'}>
-          <b>${t.mark}</b> ${t.name} <span>×${n}</span>
-        </button>`;
+      if (!(this.save.caught[t.id] > 0)) return '';
+      return `<button type="button" data-gift="${t.id}" ${n ? '' : 'disabled'}><b>${t.mark}</b> ${t.name} <span>×${n}</span></button>`;
     }).join('');
+    const sentences = Object.entries(this.save.sentences)
+      .filter(([, n]) => n > 0)
+      .map(([text, n]) => `<button type="button" class="sentence" data-sentence="${text}">“${text}” <span>×${n}</span></button>`)
+      .join('');
+    const items = bugs + sentences;
     this.giftsEl.innerHTML = items
       ? `<div class="dlg-gift-label">선물하기</div><div class="dlg-gift-row">${items}</div>`
-      : `<div class="dlg-gift-label">곤충을 잡으면 선물할 수 있어요</div>`;
+      : `<div class="dlg-gift-label">곤충을 잡거나 문장을 요리하면 선물할 수 있어요</div>`;
+
+    const an = this.animal;
+    const btns = [];
+    if (an.sulking) btns.push('<button type="button" data-act="pat" class="pat">우쭈쭈 🤍</button>');
+    btns.push('<button type="button" data-act="talk">또 말 걸기</button>');
+    if (friend && !an.following) btns.push('<button type="button" data-act="follow">같이 다니자</button>');
+    if (an.following) btns.push('<button type="button" data-act="stay">여기서 쉬어</button>');
+    btns.push('<button type="button" data-act="bye" class="dlg-bye">안녕!</button>');
+    this.actionsEl.innerHTML = btns.join('');
   }
 
   close() {
@@ -79,6 +96,6 @@ export class Dialogue {
     this.el.classList.remove('on');
     const a = this.animal;
     this.animal = null;
-    this.onClose(a);
+    this.handlers.onClose(a);
   }
 }

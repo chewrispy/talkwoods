@@ -11,7 +11,11 @@ import { Dex } from './ui/dex.js';
 import { Dialogue } from './ui/dialogue.js';
 import { AnimalManager } from './animals/animalManager.js';
 import { INSECTS } from './data/insects.js';
-import { HEARTS_TO_FRIEND } from './data/animals.js';
+import { HEARTS_TO_FRIEND, ANIMAL_BY_ID } from './data/animals.js';
+import { recipeFor } from './data/recipes.js';
+import { createPot } from './world/pot.js';
+import { Kitchen } from './ui/kitchen.js';
+import { josa } from './util/josa.js';
 import { levelFor, traitsFor, growthKey } from './data/growth.js';
 import { loadSave, writeSave } from './storage.js';
 
@@ -42,7 +46,15 @@ const player = new Player(scene, world);
 const controls = new Controls(canvas);
 const insects = new InsectManager(scene, world);
 const animals = new AnimalManager(scene, world);
+const pot = createPot(scene, world);
 const save = loadSave();
+// 예전 저장: 이미 만난 친구의 단어 카드 채워주기
+for (const id in save.met) {
+  const w = ANIMAL_BY_ID[id]?.word;
+  if (w && !save.words.includes(w)) save.words.push(w);
+}
+const isFriend = (id) => (save.hearts[id] || 0) >= HEARTS_TO_FRIEND;
+if (save.companion && isFriend(save.companion)) animals.startFollow(animals.byId(save.companion));
 
 // 새싹 성장 상태
 let lastGrowth = growthKey(save);
@@ -66,10 +78,43 @@ const dex = new Dex(uiRoot, save, {
 });
 hud.setDexCount(dex.found, INSECTS.length);
 
+const kitchen = new Kitchen(uiRoot, {
+  save,
+  onCook: (text) => cooked(text),
+  onClose: () => {
+    if (state === 'play') controls.enabled = true;
+  },
+});
+
+animals.onSulk = (a) => hud.toast(`💢 <b>${josa(a.data.name, '가', '이')}</b> 삐졌어요! 가서 우쭈쭈 해주세요`);
+
 const dialogue = new Dialogue(uiRoot, {
   save,
   onTalk: (a) => talkTo(a),
   onGift: (a, insectId) => giftTo(a, insectId),
+  onGiftSentence: (a, text) => giftSentence(a, text),
+  onFollow: (a) => {
+    animals.startFollow(a);
+    save.companion = a.data.id;
+    writeSave(save);
+    const line = a.data.id === 'mar' ? '히힝! 달리자! (같이 다니면 빨라져요)' : a.data.cheer[0];
+    animals.say(a, line.length > 16 ? line.slice(0, 15) + '…' : line, 2.5);
+    dialogue.render(line);
+  },
+  onStay: (a) => {
+    animals.stopFollow(a);
+    save.companion = null;
+    writeSave(save);
+    dialogue.close();
+    hud.toast(`<b>${josa(a.data.name, '가', '이')}</b> 원래 자리로 돌아갔어요`);
+  },
+  onPat: (a) => {
+    a.sulking = false;
+    a.sulkTimer = 45 + Math.random() * 35;
+    const line = '히힝! (기분이 풀렸다) …또 우쭈쭈 해줘야 해.';
+    animals.say(a, '히힝!', 2);
+    dialogue.render(line);
+  },
   onClose: (a) => {
     if (a) {
       a.talking = false;
@@ -90,26 +135,64 @@ controls.onAction(() => interact());
 
 function currentTarget() {
   const a = animals.findTalkable(player.position);
-  if (a) return { kind: 'animal', ref: a, id: 'a:' + a.data.id, html: `말 걸기 · ${a.data.name}` };
+  const talkTarget = (x) => ({ kind: 'animal', ref: x, id: 'a:' + x.data.id + (x.sulking ? 's' : ''), html: x.sulking ? `우쭈쭈 · ${x.data.name} 💢` : `말 걸기 · ${x.data.name}` });
+  // 같이 다니는 친구는 삐졌을 때만 먼저 챙겨요
+  if (a && (!a.following || a.sulking)) return talkTarget(a);
+  const potD = Math.hypot(pot.position.x - player.position.x, pot.position.z - player.position.z) - pot.radius;
+  if (potD < 3.0) return { kind: 'pot', id: 'pot', html: '요리하기 · 문장 냄비' };
   const bug = insects.findCatchable(player.position);
   if (bug) return { kind: 'bug', ref: bug, id: 'b:' + bug.type.id + bug.group.id, html: `잡기 · ${bug.type.name} <b>${bug.type.mark}</b>` };
+  if (a) return talkTarget(a);
   return null;
 }
 
+function openKitchen() {
+  controls.enabled = false;
+  controls.reset();
+  hud.hideTarget();
+  kitchen.open();
+}
+
+function cooked(text) {
+  const r = recipeFor(text);
+  const isNew = !save.recipes[text];
+  save.sentences[text] = (save.sentences[text] || 0) + 1;
+  save.recipes[text] = true;
+  writeSave(save);
+  hud.toast(isNew ? `✨ 새 요리! <b>${r.name}</b> “${text}”` : `🍲 “${text}” 완성!`);
+}
+
+function giftSentence(a, text) {
+  if (!(save.sentences[text] > 0)) return;
+  const d = a.data;
+  save.sentences[text] -= 1;
+  const before = save.hearts[d.id] || 0;
+  let line;
+  if (text === d.favorite) {
+    save.hearts[d.id] = Math.min(HEARTS_TO_FRIEND, before + 2);
+    line = d.reactions.fav;
+    if (before < HEARTS_TO_FRIEND && save.hearts[d.id] >= HEARTS_TO_FRIEND) {
+      line = d.friendLine;
+      hud.toast(`💛 <b>${josa(d.name, '와', '과')}</b> 친구가 되었어요!`);
+    }
+  } else {
+    line = `“${text}”… ${d.reactions.other}`;
+  }
+  writeSave(save);
+  animals.say(a, text === d.favorite ? d.favorite + ' ♥' : text, 2.8);
+  dialogue.render(line);
+  checkGrowth();
+}
+
 function interact() {
-  if (state !== 'play' || dialogue.isOpen) return;
+  if (state !== 'play' || dialogue.isOpen || kitchen.isOpen) return;
   const t = currentTarget();
   if (!t) return;
   if (t.kind === 'animal') openDialogue(t.ref);
+  else if (t.kind === 'pot') openKitchen();
   else tryCatch(t.ref);
 }
 
-// 받침에 따라 조사 고르기: josa('그로타','와','과') → '그로타와'
-function josa(word, withoutBatchim, withBatchim) {
-  const code = word.charCodeAt(word.length - 1) - 0xac00;
-  const has = code >= 0 && code <= 11171 && code % 28 !== 0;
-  return word + (has ? withBatchim : withoutBatchim);
-}
 
 function openDialogue(a) {
   controls.enabled = false;
@@ -126,9 +209,13 @@ function openDialogue(a) {
   const first = !save.met[a.data.id];
   if (first) {
     save.met[a.data.id] = true;
+    if (!save.words.includes(a.data.word)) {
+      save.words.push(a.data.word);
+      hud.toast(`📜 단어 카드 <b>「${a.data.word}」</b>${josa(a.data.word, '를', '을').slice(a.data.word.length)} 받았어요`);
+    }
     writeSave(save);
   }
-  const line = a.data.lines[0];
+  const line = a.sulking ? '힝…' : a.data.lines[0];
   animals.say(a, line, 2.5);
   dialogue.open(a, first ? `${line}  (${a.data.desc})` : line);
 }
@@ -193,6 +280,8 @@ function tryCatch(bug) {
   );
   hud.pulseDex();
   hud.hideTarget();
+  const f = animals.follower;
+  if (f && !f.sulking) animals.say(f, f.data.cheer[Math.floor(Math.random() * f.data.cheer.length)], 2);
   checkGrowth();
 }
 
@@ -261,10 +350,13 @@ function loop(ts) {
   if (state === 'play') {
     player.update(dt, controls.getMove(), controls.yaw);
     hud.setTime(time.label);
-    if (!dialogue.isOpen) hud.setTarget(currentTarget());
+    if (!dialogue.isOpen && !kitchen.isOpen) hud.setTarget(currentTarget());
   }
+  const f = animals.follower;
+  player.speedMul = f && f.data.id === 'mar' && !f.sulking ? 1.7 : 1;
   insects.update(dt, time.isDay);
-  animals.update(dt, player.position);
+  animals.update(dt, player);
+  pot.update(performance.now() / 1000, time.isDay);
   player.sprout.update(performance.now() / 1000);
   updateCamera(dt);
   renderer.render(scene, camera);
@@ -290,6 +382,14 @@ window.talkwoods = {
     save.inventory[id] = (save.inventory[id] || 0) + n;
     writeSave(save);
     hud.setDexCount(dex.found, INSECTS.length);
+    checkGrowth();
+  },
+  befriend: (id) => {
+    save.met[id] = true;
+    const w = ANIMAL_BY_ID[id].word;
+    if (!save.words.includes(w)) save.words.push(w);
+    save.hearts[id] = HEARTS_TO_FRIEND;
+    writeSave(save);
     checkGrowth();
   },
   zoom: (d) => {

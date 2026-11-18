@@ -10,6 +10,12 @@ export const ZONES = {
   grottaHill: { x: 9, z: -4, r: 3 },
   anyongPerch: { x: -7, z: 7, r: 2.2 },
   slothNook: { x: -4, z: -20, r: 2.5 },
+  yukaguriTree: { x: 20, z: 8, r: 2.5 },
+  graesoField: { x: 3, z: 21, r: 3 },
+  marRun: { x: -24, z: -4, r: 3 },
+  sunhamaBank: { x: -10.3, z: 18.8, r: 2.2 },
+  // 문장 냄비
+  pot: { x: -4, z: -3, r: 2.2 },
 };
 
 const WORLD_RADIUS = 56; // 플레이어가 갈 수 있는 반경

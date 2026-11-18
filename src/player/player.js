@@ -5,6 +5,7 @@ export class Player {
   constructor(scene, world) {
     this.world = world;
     this.speed = 5.2;
+    this.speedMul = 1;
     this.position = new THREE.Vector3(0, world.heightAt(0, 2), 2);
     this.facing = Math.PI;
     this.walkPhase = 0;
@@ -63,8 +64,8 @@ export class Player {
 
     if (mag > 0.05) {
       const len = Math.hypot(mx, mz) || 1;
-      this.position.x += (mx / len) * this.speed * mag * dt;
-      this.position.z += (mz / len) * this.speed * mag * dt;
+      this.position.x += (mx / len) * this.speed * this.speedMul * mag * dt;
+      this.position.z += (mz / len) * this.speed * this.speedMul * mag * dt;
       const target = Math.atan2(mx, mz);
       let diff = target - this.facing;
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));

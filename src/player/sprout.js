@@ -141,6 +141,46 @@ export class Sprout {
       this.root.add(holder);
     }
 
+    // 유카구리 친구: 빨간 볏 잎
+    if (has('peck')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#e2453c', roughness: 0.6 });
+      const crest = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), m);
+      crest.scale.set(0.6, 1.4, 1.6);
+      crest.position.set(0, stemH + 0.06, -0.03);
+      this.root.add(crest);
+    }
+
+    // 그래소 친구: 뿔처럼 휜 덩굴
+    if (has('horn')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#e8dcc4', roughness: 0.7 });
+      for (const s of [-1, 1]) {
+        const horn = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.013, 5, 12, Math.PI * 0.7), m);
+        horn.position.set(0.05 * s, 0.03, 0);
+        horn.rotation.set(0, s > 0 ? 0 : Math.PI, 0.3);
+        this.root.add(horn);
+      }
+    }
+
+    // 마르 친구: 바람에 날리는 갈기 잎
+    if (has('mane')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#c99673', roughness: 0.8 });
+      for (let i = 0; i < 3; i++) {
+        const strand = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.12, 0.01), m);
+        strand.position.set(-0.02, stemH * (0.45 + i * 0.18), -0.03 - i * 0.01);
+        strand.rotation.x = -0.9;
+        this.root.add(strand);
+      }
+    }
+
+    // 순하마 친구: 동그란 연잎
+    if (has('round')) {
+      const m = new THREE.MeshStandardMaterial({ color: '#7fb069', roughness: 0.7, side: THREE.DoubleSide });
+      const pad = new THREE.Mesh(new THREE.CircleGeometry(0.09, 14, 0.3, Math.PI * 1.8), m);
+      pad.rotation.x = -Math.PI / 2 + 0.25;
+      pad.position.set(-0.12, stemH * 0.35, 0.04);
+      this.root.add(pad);
+    }
+
     // 최고 레벨: 꼭대기에 꽃봉오리
     if (level >= 5) {
       const bud = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshStandardMaterial({ color: '#ff9ec4', roughness: 0.6 }));

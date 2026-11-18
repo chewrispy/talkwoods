@@ -548,3 +548,75 @@ body {
 .dlg-actions .dlg-bye {
   background: linear-gradient(180deg, #fff6df, #ecd9ae);
 }
+
+.dex-mark.recipe {
+  --c: #f3d58a;
+  font-size: 30px;
+}
+.dlg-gifts button.sentence {
+  background: #fff4d6;
+}
+.dlg-actions {
+  flex-wrap: wrap;
+}
+.dlg-actions .pat {
+  background: #ffe1ea;
+  border-color: #e2a0b3;
+}
+.kit-x {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.kit-preview {
+  margin: 12px 0 4px;
+  padding: 14px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  background: #fffaf0;
+  border: 1px dashed rgba(181, 143, 69, 0.7);
+  border-radius: 12px;
+  min-height: 68px;
+}
+.kit-ph {
+  font-size: 15px;
+  font-weight: 400;
+  color: #a08a66;
+}
+.kit-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  background: #b58f45;
+  margin-left: 2px;
+  vertical-align: -0.1em;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.kit-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #8a6a2c;
+  min-height: 1.4em;
+  margin-bottom: 10px;
+}
+.kit-words button.sel {
+  background: #ffe9a8;
+  border-color: #b58f45;
+  font-weight: 700;
+}
+.kit-empty {
+  font-size: 13px;
+  color: #a08a66;
+}
+.kit-cook:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

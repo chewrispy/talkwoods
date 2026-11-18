@@ -1,5 +1,7 @@
 import { INSECTS } from '../data/insects.js';
-import { ANIMALS, HEARTS_TO_FRIEND } from '../data/animals.js';
+import { ANIMALS, HEARTS_TO_FRIEND, ANIMAL_BY_ID } from '../data/animals.js';
+import { RECIPES, recipeFor } from '../data/recipes.js';
+import { josa } from '../util/josa.js';
 import { levelFor, traitsFor, totalCaught, nextLevelAt, MAX_LEVEL, MARK_TRAITS, MARK_TRAIT_COUNT } from '../data/growth.js';
 
 export class Dex {
@@ -91,10 +93,31 @@ export class Dex {
         ${markHints ? `<div class="dex-meta">다음 잎까지: ${markHints}</div>` : ''}
       </div></div>`;
 
+    // 문장 요리책
+    const known = Object.keys(this.save.recipes);
+    const cards = known.map((text) => {
+      const r = recipeFor(text);
+      const fan = r.fan ? ANIMAL_BY_ID[r.fan] : null;
+      return `<div class="dex-card"><div class="dex-mark recipe">“”</div><div class="dex-body">
+          <div class="dex-name">${text} <span class="dex-n">${r.name}</span></div>
+          <div class="dex-desc">${r.desc}</div>
+          ${fan ? `<div class="dex-meta">♥ ${josa(fan.name, '가', '이')} 제일 좋아하는 문장</div>` : ''}
+        </div></div>`;
+    });
+    const hints = RECIPES.filter((r) => r.fan && !this.save.recipes[r.text] && this.save.met[r.fan]).map((r) => {
+      const fan = ANIMAL_BY_ID[r.fan];
+      return `<div class="dex-card unknown"><div class="dex-mark">“”</div><div class="dex-body"><div class="dex-name">???</div>
+          <div class="dex-desc">${josa(fan.name, '가', '이')} 좋아할 것 같은 문장. 「${fan.word}」 카드에 무언가를 넣어보세요.</div></div></div>`;
+    });
+    const recipeHtml = cards.length || hints.length
+      ? cards.join('') + hints.join('')
+      : '<div class="dex-card unknown"><div class="dex-body"><div class="dex-desc">출발 지점 근처 문장 냄비에서 단어와 문장부호를 끓여보세요.</div></div></div>';
+
     this.list.innerHTML = `
       <div class="dex-section">나의 새싹</div>${sprout}
       <div class="dex-section">곤충 도감</div>${bugs}
-      <div class="dex-section">숲 친구들</div>${friends}`;
+      <div class="dex-section">숲 친구들</div>${friends}
+      <div class="dex-section">문장 요리책 · ${known.length}</div>${recipeHtml}`;
   }
 
   open() {
