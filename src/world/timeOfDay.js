@@ -78,6 +78,14 @@ export class TimeOfDay {
     return { icon: '🌙', text: '밤' };
   }
 
+  // 시간대별 말투용: 'sunset' | 'dawn' | null
+  get mood() {
+    const t = this.label.text;
+    if (t === '저녁' || t === '해 질 녘') return 'sunset';
+    if (t === '새벽') return 'dawn';
+    return null;
+  }
+
   update(dt, focus) {
     this.t = (this.t + dt / this.dayLength) % 1;
     const a = this.t * Math.PI * 2;

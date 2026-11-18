@@ -15,7 +15,9 @@ export class Dialogue {
           <div class="dlg-name"></div>
           <div class="dlg-hearts"></div>
         </div>
+        <div class="dlg-me"></div>
         <div class="dlg-line"></div>
+        <div class="dlg-real"></div>
         <div class="dlg-gifts"></div>
         <div class="dlg-actions"></div>
       </div>
@@ -24,6 +26,13 @@ export class Dialogue {
     this.nameEl = this.el.querySelector('.dlg-name');
     this.heartsEl = this.el.querySelector('.dlg-hearts');
     this.lineEl = this.el.querySelector('.dlg-line');
+    this.meEl = this.el.querySelector('.dlg-me');
+    this.realEl = this.el.querySelector('.dlg-real');
+    this.realEl.addEventListener('click', (e) => {
+      if (e.target.closest('.dlg-reveal') && this.real) {
+        this.realEl.innerHTML = `<span class="dlg-real-text">원래 한 말: “${this.real}”</span>`;
+      }
+    });
     this.giftsEl = this.el.querySelector('.dlg-gifts');
     this.actionsEl = this.el.querySelector('.dlg-actions');
     this.giftsEl.addEventListener('click', (e) => {
@@ -49,19 +58,23 @@ export class Dialogue {
     return this.el.classList.contains('on');
   }
 
-  open(animal, line) {
+  open(animal, line, extra) {
     this.animal = animal;
     this.el.classList.add('on');
-    this.render(line);
+    this.render(line, extra);
   }
 
-  render(line) {
+  // extra: { me: 내가 한 말, tag: 말투 표시, real: 세모 열매일 때 진짜 대사 }
+  render(line, extra = {}) {
     const a = this.animal.data;
     const hearts = this.save.hearts[a.id] || 0;
     const friend = hearts >= HEARTS_TO_FRIEND;
     this.nameEl.innerHTML = `${a.name} <span class="dlg-kind">${a.kind}</span>${friend ? ' <span class="dlg-friend">친구</span>' : ''}`;
     this.heartsEl.textContent = Array.from({ length: HEARTS_TO_FRIEND }, (_, i) => (i < hearts ? '♥' : '♡')).join('');
     if (line !== undefined) {
+      this.meEl.innerHTML = extra.me ? `<span class="dlg-me-label">나</span> ${extra.me}${extra.tag ? ` <span class="dlg-tag">${extra.tag}</span>` : ''}` : '';
+      this.real = extra.real || null;
+      this.realEl.innerHTML = this.real ? '<button type="button" class="dlg-reveal">▲ 원래 뭐라고 했더라?</button>' : '';
       this.lineEl.textContent = line;
       this.lineEl.classList.remove('pop');
       void this.lineEl.offsetWidth;

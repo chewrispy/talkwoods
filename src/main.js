@@ -16,6 +16,8 @@ import { recipeFor } from './data/recipes.js';
 import { createPot } from './world/pot.js';
 import { Kitchen } from './ui/kitchen.js';
 import { josa } from './util/josa.js';
+import { createFruitBushes } from './world/fruits.js';
+import { FRUIT_SECONDS, MY_LINES, TIME_TONE_CHANCE, NEMO_REACT, DONGGEUL_REACT, SEMO_TWISTS, SUNSET_TAG, DAWN_TAG } from './data/tones.js';
 import { levelFor, traitsFor, growthKey } from './data/growth.js';
 import { loadSave, writeSave } from './storage.js';
 
@@ -47,6 +49,7 @@ const controls = new Controls(canvas);
 const insects = new InsectManager(scene, world);
 const animals = new AnimalManager(scene, world);
 const pot = createPot(scene, world);
+const fruits = createFruitBushes(scene, world);
 const save = loadSave();
 // 예전 저장: 이미 만난 친구의 단어 카드 채워주기
 for (const id in save.met) {
@@ -138,6 +141,8 @@ function currentTarget() {
   const talkTarget = (x) => ({ kind: 'animal', ref: x, id: 'a:' + x.data.id + (x.sulking ? 's' : ''), html: x.sulking ? `우쭈쭈 · ${x.data.name} 💢` : `말 걸기 · ${x.data.name}` });
   // 같이 다니는 친구는 삐졌을 때만 먼저 챙겨요
   if (a && (!a.following || a.sulking)) return talkTarget(a);
+  const bush = fruits.findNear(player.position);
+  if (bush) return { kind: 'fruit', ref: bush, id: 'f:' + bush.fruit.id, html: `먹기 · ${bush.fruit.name} <b style="color:${bush.fruit.color}">${bush.fruit.icon}</b>` };
   const potD = Math.hypot(pot.position.x - player.position.x, pot.position.z - player.position.z) - pot.radius;
   if (potD < 3.0) return { kind: 'pot', id: 'pot', html: '요리하기 · 문장 냄비' };
   const bug = insects.findCatchable(player.position);
@@ -162,27 +167,6 @@ function cooked(text) {
   hud.toast(isNew ? `✨ 새 요리! <b>${r.name}</b> “${text}”` : `🍲 “${text}” 완성!`);
 }
 
-function giftSentence(a, text) {
-  if (!(save.sentences[text] > 0)) return;
-  const d = a.data;
-  save.sentences[text] -= 1;
-  const before = save.hearts[d.id] || 0;
-  let line;
-  if (text === d.favorite) {
-    save.hearts[d.id] = Math.min(HEARTS_TO_FRIEND, before + 2);
-    line = d.reactions.fav;
-    if (before < HEARTS_TO_FRIEND && save.hearts[d.id] >= HEARTS_TO_FRIEND) {
-      line = d.friendLine;
-      hud.toast(`💛 <b>${josa(d.name, '와', '과')}</b> 친구가 되었어요!`);
-    }
-  } else {
-    line = `“${text}”… ${d.reactions.other}`;
-  }
-  writeSave(save);
-  animals.say(a, text === d.favorite ? d.favorite + ' ♥' : text, 2.8);
-  dialogue.render(line);
-  checkGrowth();
-}
 
 function interact() {
   if (state !== 'play' || dialogue.isOpen || kitchen.isOpen) return;
@@ -190,9 +174,54 @@ function interact() {
   if (!t) return;
   if (t.kind === 'animal') openDialogue(t.ref);
   else if (t.kind === 'pot') openKitchen();
+  else if (t.kind === 'fruit') eatFruit(t.ref);
   else tryCatch(t.ref);
 }
 
+
+// ── 말투 ──
+let activeFruit = null; // { fruit, left }
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const short = (t) => (t.length > 16 ? t.slice(0, 15) + '…' : t);
+
+// 이번에 내가 할 말과 그 말투
+function myTurn() {
+  const f = activeFruit?.fruit.id;
+  if (f === 'nemo') return { kind: 'nemo', me: pick(MY_LINES.nemo), tag: '◼ 네모 말투' };
+  if (f === 'donggeul') return { kind: 'donggeul', me: pick(MY_LINES.donggeul), tag: '● 동글 말투' };
+  const mood = time.mood;
+  if (mood && Math.random() < TIME_TONE_CHANCE) {
+    return mood === 'sunset'
+      ? { kind: 'sunset', me: pick(MY_LINES.sunset), tag: '🌇 노을 말투' }
+      : { kind: 'dawn', me: pick(MY_LINES.dawn), tag: '🌌 새벽 말투' };
+  }
+  return { kind: 'normal', me: pick(MY_LINES.normal), tag: '' };
+}
+
+// 내 말투에 따라 친구의 대답이 달라져요
+function replyTo(a, base, kind) {
+  const d = a.data;
+  if (kind === 'nemo') {
+    if (d.id === 'mar' && a.following && !a.sulking) {
+      a.sulking = true;
+      hud.toast(`💢 <b>${josa(d.name, '가', '이')}</b> 네모 말투에 삐졌어요!`);
+    }
+    return NEMO_REACT[d.type] || `${base} (전혀 안 통한다)`;
+  }
+  if (kind === 'donggeul') return DONGGEUL_REACT[d.type] || `${base.replace(/[.!?]*$/, '')}~ 🙂`;
+  if (kind === 'sunset') return `${base} ${SUNSET_TAG}`;
+  if (kind === 'dawn') return `${base} ${DAWN_TAG}`;
+  return base;
+}
+
+// 세모 열매를 먹었으면 삐딱하게 들려요
+function show(a, reply, turn, bubble) {
+  const semo = activeFruit?.fruit.id === 'semo';
+  const heard = semo ? pick(SEMO_TWISTS) : reply;
+  animals.say(a, short(semo ? heard : bubble || reply), 2.6);
+  const extra = { me: turn?.me, tag: semo ? '▲ 세모로 들림' : turn?.tag, real: semo ? reply : null };
+  return { heard, extra };
+}
 
 function openDialogue(a) {
   controls.enabled = false;
@@ -215,9 +244,11 @@ function openDialogue(a) {
     }
     writeSave(save);
   }
-  const line = a.sulking ? '힝…' : a.data.lines[0];
-  animals.say(a, line, 2.5);
-  dialogue.open(a, first ? `${line}  (${a.data.desc})` : line);
+  const turn = myTurn();
+  const base = a.sulking ? '힝…' : a.data.lines[0];
+  const reply = a.sulking ? base : replyTo(a, base, turn.kind);
+  const { heard, extra } = show(a, reply, turn, ['nemo', 'donggeul'].includes(turn.kind) ? null : base);
+  dialogue.open(a, first ? `${heard}  (${a.data.desc})` : heard, extra);
 }
 
 function talkTo(a) {
@@ -227,28 +258,70 @@ function talkTo(a) {
   } else {
     a.talkLevel = (a.talkLevel + 1 + Math.floor(Math.random() * (d.lines.length - 1))) % d.lines.length;
   }
-  const line = d.lines[a.talkLevel];
-  animals.say(a, line, 2.5);
-  dialogue.render(line);
+  const turn = myTurn();
+  const base = d.lines[a.talkLevel];
+  const reply = replyTo(a, base, turn.kind);
+  const { heard, extra } = show(a, reply, turn, ['nemo', 'donggeul'].includes(turn.kind) ? null : base);
+  dialogue.render(heard, extra);
+}
+
+// 하트 더하기. 친구가 되면 친구 대사를 돌려줘요
+function addHearts(d, n) {
+  const before = save.hearts[d.id] || 0;
+  if (before >= HEARTS_TO_FRIEND || n <= 0) return null;
+  save.hearts[d.id] = Math.min(HEARTS_TO_FRIEND, before + n);
+  if (save.hearts[d.id] >= HEARTS_TO_FRIEND) {
+    hud.toast(`💛 <b>${josa(d.name, '와', '과')}</b> 친구가 되었어요!`);
+    return d.friendLine;
+  }
+  return null;
+}
+
+// 열매 말투에 따라 선물 효과가 달라져요
+function giftHearts(d, normalHearts) {
+  const f = activeFruit?.fruit.id;
+  if (f === 'nemo') return d.type === '공격' ? Math.max(1, normalHearts) : 0;
+  if (f === 'donggeul') return Math.max(1, normalHearts);
+  return normalHearts;
 }
 
 function giftTo(a, insectId) {
   if (!(save.inventory[insectId] > 0)) return;
   const d = a.data;
   save.inventory[insectId] -= 1;
-  const before = save.hearts[d.id] || 0;
-  let line;
-  if (insectId === d.likes && before < HEARTS_TO_FRIEND) {
-    save.hearts[d.id] = before + 1;
-    line = save.hearts[d.id] >= HEARTS_TO_FRIEND ? d.friendLine : d.reactions.like;
-    if (save.hearts[d.id] >= HEARTS_TO_FRIEND) hud.toast(`💛 <b>${josa(d.name, '와', '과')}</b> 친구가 되었어요!`);
-  } else {
-    line = insectId === d.likes ? d.reactions.like : d.reactions.other;
-  }
+  const liked = insectId === d.likes;
+  const n = giftHearts(d, liked ? 1 : 0);
+  const f = activeFruit?.fruit.id;
+  let reply = liked ? d.reactions.like : d.reactions.other;
+  if (f === 'nemo') reply = replyTo(a, reply, 'nemo');
+  if (f === 'donggeul') reply = n && !liked ? `${replyTo(a, reply, 'donggeul')} (둥근 말투 덕분에 마음이 열렸다)` : reply;
+  reply = addHearts(d, n) || reply;
   writeSave(save);
-  animals.say(a, line.length > 16 ? line.slice(0, 15) + '…' : line, 2.8);
-  dialogue.render(line);
+  const t = INSECTS.find((x) => x.id === insectId);
+  const { heard, extra } = show(a, reply, { me: `${t.name} ${t.mark} 선물이야.`, tag: '' });
+  dialogue.render(heard, extra);
   checkGrowth();
+}
+
+function giftSentence(a, text) {
+  if (!(save.sentences[text] > 0)) return;
+  const d = a.data;
+  save.sentences[text] -= 1;
+  const fav = text === d.favorite;
+  const n = giftHearts(d, fav ? 2 : 0);
+  let reply = fav ? d.reactions.fav : `“${text}”… ${d.reactions.other}`;
+  if (activeFruit?.fruit.id === 'nemo') reply = replyTo(a, reply, 'nemo');
+  reply = addHearts(d, n) || reply;
+  writeSave(save);
+  const { heard, extra } = show(a, reply, { me: `“${text}”`, tag: '' }, fav ? d.favorite + ' ♥' : text);
+  dialogue.render(heard, extra);
+  checkGrowth();
+}
+
+function eatFruit(b) {
+  fruits.pick(b);
+  activeFruit = { fruit: b.fruit, left: FRUIT_SECONDS };
+  hud.toast(`<span style="color:${b.fruit.color}">${b.fruit.icon}</span> <b>${b.fruit.name}</b>을 먹었어요! ${josa(b.fruit.affects, '가', '이')} 바뀌어요`);
 }
 
 function checkGrowth() {
@@ -357,6 +430,15 @@ function loop(ts) {
   insects.update(dt, time.isDay);
   animals.update(dt, player);
   pot.update(performance.now() / 1000, time.isDay);
+  fruits.update(dt, performance.now() / 1000);
+  if (activeFruit && !dialogue.isOpen) {
+    activeFruit.left -= dt;
+    if (activeFruit.left <= 0) {
+      hud.toast(`말투가 원래대로 돌아왔어요`);
+      activeFruit = null;
+    }
+  }
+  hud.setTone(activeFruit?.fruit, activeFruit?.left);
   player.sprout.update(performance.now() / 1000);
   updateCamera(dt);
   renderer.render(scene, camera);
@@ -391,6 +473,10 @@ window.talkwoods = {
     save.hearts[id] = HEARTS_TO_FRIEND;
     writeSave(save);
     checkGrowth();
+  },
+  eat: (id) => {
+    const b = fruits.bushes.find((x) => x.fruit.id === id);
+    if (b) eatFruit(b);
   },
   zoom: (d) => {
     controls.distance = d;

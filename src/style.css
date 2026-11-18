@@ -620,3 +620,68 @@ body {
   opacity: 0.45;
   cursor: default;
 }
+
+/* ── 말투 ── */
+.dlg-me {
+  font-size: 14px;
+  color: #6b5a45;
+  margin-top: 8px;
+}
+.dlg-me:empty {
+  display: none;
+}
+.dlg-me-label {
+  display: inline-block;
+  font-size: 11px;
+  background: #e9f5dc;
+  border: 1px solid #a8c98a;
+  border-radius: 999px;
+  padding: 0 7px;
+  margin-right: 2px;
+  color: #3f6b2a;
+}
+.dlg-tag {
+  font-size: 11px;
+  color: #b0603a;
+  margin-left: 4px;
+}
+.dlg-me + .dlg-line {
+  margin-top: 6px;
+}
+.dlg-real {
+  margin: -6px 0 10px;
+}
+.dlg-real:empty {
+  display: none;
+}
+.dlg-reveal {
+  font-family: 'Gowun Batang', serif;
+  font-size: 12px;
+  background: none;
+  border: none;
+  color: #9a8a3a;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.dlg-real-text {
+  font-size: 13px;
+  color: #8a6a2c;
+}
+.hud-tone {
+  position: absolute;
+  left: 14px;
+  top: calc(max(14px, env(safe-area-inset-top)) + 46px);
+  background: rgba(43, 33, 24, 0.82);
+  color: #fff6e3;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  display: none;
+}
+.hud-tone.on {
+  display: block;
+}
+.hud-tone b {
+  margin-right: 4px;
+}

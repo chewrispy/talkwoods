@@ -2,6 +2,7 @@ import { INSECTS } from '../data/insects.js';
 import { ANIMALS, HEARTS_TO_FRIEND, ANIMAL_BY_ID } from '../data/animals.js';
 import { RECIPES, recipeFor } from '../data/recipes.js';
 import { josa } from '../util/josa.js';
+import { FRUITS } from '../data/tones.js';
 import { levelFor, traitsFor, totalCaught, nextLevelAt, MAX_LEVEL, MARK_TRAITS, MARK_TRAIT_COUNT } from '../data/growth.js';
 
 export class Dex {
@@ -117,7 +118,11 @@ export class Dex {
       <div class="dex-section">나의 새싹</div>${sprout}
       <div class="dex-section">곤충 도감</div>${bugs}
       <div class="dex-section">숲 친구들</div>${friends}
-      <div class="dex-section">문장 요리책 · ${known.length}</div>${recipeHtml}`;
+      <div class="dex-section">문장 요리책 · ${known.length}</div>${recipeHtml}
+      <div class="dex-section">말투 열매</div>${FRUITS.map((f) => `<div class="dex-card"><div class="dex-mark" style="--c:${f.color}">${f.icon}</div><div class="dex-body">
+          <div class="dex-name">${f.name} <span class="dex-n">${f.affects}</span></div>
+          <div class="dex-desc">${f.desc}</div></div></div>`).join('')}
+      <div class="dex-card unknown"><div class="dex-body"><div class="dex-desc">🌇 노을 질 때는 말이 로맨틱하게, 🌌 새벽에는 센치하게 나갈 때가 있어요.</div></div></div>`;
   }
 
   open() {

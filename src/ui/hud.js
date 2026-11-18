@@ -7,6 +7,7 @@ export class Hud {
       <div class="hud-time"><span class="hud-time-icon"></span><span class="hud-time-text"></span></div>
       <button class="hud-dex" type="button">📖 수첩 <span class="hud-dex-count"></span></button>
       <button class="hud-catch" type="button"></button>
+      <div class="hud-tone"></div>
       <div class="hud-toasts"></div>
       <div class="hud-hint"></div>
     `;
@@ -18,6 +19,7 @@ export class Hud {
     this.catchBtn = this.el.querySelector('.hud-catch');
     this.toasts = this.el.querySelector('.hud-toasts');
     this.hint = this.el.querySelector('.hud-hint');
+    this.toneEl = this.el.querySelector('.hud-tone');
     this.targetId = null;
 
     this.catchBtn.addEventListener('click', (e) => {
@@ -45,6 +47,21 @@ export class Hud {
     this._t = text;
     this.timeIcon.textContent = icon;
     this.timeText.textContent = text;
+  }
+
+  // fruit: {icon, name, color}, seconds 남은 시간 (없으면 숨김)
+  setTone(fruit, seconds) {
+    if (!fruit) {
+      if (this._tone) this.toneEl.classList.remove('on');
+      this._tone = null;
+      return;
+    }
+    const sec = Math.ceil(seconds);
+    const key = fruit.id + sec;
+    if (this._tone === key) return;
+    this._tone = key;
+    this.toneEl.innerHTML = `<b style="color:${fruit.color}">${fruit.icon}</b>${fruit.name.replace(' 열매', '')} 말투 · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    this.toneEl.classList.add('on');
   }
 
   setDexCount(found, total) {

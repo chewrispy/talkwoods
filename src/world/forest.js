@@ -16,6 +16,10 @@ export const ZONES = {
   sunhamaBank: { x: -10.3, z: 18.8, r: 2.2 },
   // 문장 냄비
   pot: { x: -4, z: -3, r: 2.2 },
+  // 말투 열매 덤불
+  nemoBush: { x: 13, z: 11, r: 1.6 },
+  semoBush: { x: -18, z: -24, r: 1.6 },
+  donggeulBush: { x: -1, z: 12, r: 1.6 },
 };
 
 const WORLD_RADIUS = 56; // 플레이어가 갈 수 있는 반경

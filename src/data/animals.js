@@ -12,6 +12,7 @@ export const HEARTS_TO_FRIEND = 3;
 export const ANIMALS = [
   {
     id: 'grotta',
+    type: '긍정',
     name: '그로타',
     kind: '맞장구 새',
     spot: 'grottaHill',
@@ -35,6 +36,7 @@ export const ANIMALS = [
   },
   {
     id: 'anyong',
+    type: '부정',
     name: '아뇽',
     kind: '아니라는 새',
     spot: 'anyongPerch',
@@ -58,6 +60,7 @@ export const ANIMALS = [
   },
   {
     id: 'grellsdo',
+    type: '무력화',
     name: '그럴스도',
     kind: '나무늘보',
     spot: 'slothNook',
@@ -81,6 +84,7 @@ export const ANIMALS = [
   },
   {
     id: 'yukaguri',
+    type: '공격',
     name: '유카구리',
     kind: '따지는 딱따구리',
     spot: 'yukaguriTree',
@@ -104,6 +108,7 @@ export const ANIMALS = [
   },
   {
     id: 'graeso',
+    type: '무력화',
     name: '그래소',
     kind: '물소',
     spot: 'graesoField',
@@ -127,6 +132,7 @@ export const ANIMALS = [
   },
   {
     id: 'mar',
+    type: '지원',
     name: '마르',
     kind: '삐지는 말',
     spot: 'marRun',
@@ -150,6 +156,7 @@ export const ANIMALS = [
   },
   {
     id: 'sunhama',
+    type: '협박',
     name: '순하마',
     kind: '협박하는 하마',
     spot: 'sunhamaBank',
