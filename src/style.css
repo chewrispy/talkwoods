@@ -1,0 +1,421 @@
+:root {
+  --ink: #2b2118;
+  --paper: #f7eedb;
+  --paper-2: #efe1c3;
+  --gold: #c9a24a;
+  --forest: #1b2a22;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--forest);
+  font-family: 'Gowun Batang', 'Nanum Myeongjo', serif;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ── 타이틀 ── */
+.title-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  background: radial-gradient(ellipse at center, rgba(20, 30, 20, 0.1) 0%, rgba(12, 20, 14, 0.55) 75%);
+  transition: opacity 0.9s ease;
+}
+.title-screen.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.title-inner {
+  text-align: center;
+  color: #fff6e3;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55), 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.title-en {
+  font-family: 'IM Fell English', Georgia, serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.95;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: rise 2.2s 0.3s ease forwards;
+}
+.t-big {
+  font-size: clamp(56px, 15vw, 128px);
+  letter-spacing: 0.02em;
+}
+.t-small {
+  font-style: italic;
+  font-size: clamp(20px, 5vw, 38px);
+  margin: 2px 0 6px;
+  color: #f1dca8;
+}
+.title-ornament {
+  margin-top: 14px;
+  font-size: 26px;
+  color: var(--gold);
+  opacity: 0;
+  animation: fade 1.6s 1.6s ease forwards;
+}
+.title-ko {
+  margin-top: 6px;
+  font-size: clamp(20px, 5vw, 30px);
+  letter-spacing: 0.4em;
+  padding-left: 0.4em;
+  opacity: 0;
+  animation: fade 1.6s 1.9s ease forwards;
+}
+.title-start {
+  margin-top: 42px;
+  font-family: 'Gowun Batang', serif;
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  padding: 14px 40px 14px 44px;
+  color: var(--ink);
+  background: linear-gradient(180deg, #fff6df, #ecd9ae);
+  border: 1px solid #b58f45;
+  border-radius: 999px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff;
+  cursor: pointer;
+  opacity: 0;
+  animation: fade 1.2s 2.6s ease forwards;
+  transition: transform 0.15s ease;
+}
+.title-start:active {
+  transform: scale(0.96);
+}
+.title-foot {
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  color: rgba(255, 246, 227, 0.7);
+  font-size: 15px;
+  opacity: 0;
+  animation: fade 2s 3s ease forwards;
+}
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── HUD ── */
+.hud {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1s 0.6s ease;
+}
+.hud.on {
+  opacity: 1;
+}
+.hud button,
+.hud-time {
+  pointer-events: auto;
+  font-family: 'Gowun Batang', serif;
+}
+.hud-time,
+.hud-dex {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  background: rgba(247, 238, 219, 0.92);
+  border: 1px solid rgba(181, 143, 69, 0.6);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 15px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  color: var(--ink);
+}
+.hud-time {
+  left: 14px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+}
+.hud-dex {
+  right: 14px;
+  cursor: pointer;
+}
+.hud-dex-count {
+  font-size: 13px;
+  color: #8a6a2c;
+  margin-left: 2px;
+}
+.hud-dex.pulse {
+  animation: pulse 0.6s ease;
+}
+@keyframes pulse {
+  40% {
+    transform: scale(1.15);
+  }
+}
+.hud-catch {
+  position: absolute;
+  left: 50%;
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 20px));
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none !important;
+  font-size: 17px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  border: 1px solid #b58f45;
+  background: linear-gradient(180deg, #fff6df, #ecd9ae);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+.hud-catch.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto !important;
+}
+.hud-catch b {
+  font-family: 'IM Fell English', serif;
+  font-size: 22px;
+  margin-left: 2px;
+}
+.hud-catch kbd {
+  font-family: inherit;
+  font-size: 12px;
+  border: 1px solid #b58f45;
+  border-radius: 5px;
+  padding: 1px 6px;
+  margin-right: 4px;
+  background: #fffaf0;
+}
+.hud-toasts {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.toast {
+  background: rgba(43, 33, 24, 0.85);
+  color: #fff6e3;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  white-space: nowrap;
+  animation: toastIn 0.3s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.toast.out {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.toast .mk {
+  font-family: 'IM Fell English', serif;
+  color: #ffe08a;
+  font-size: 18px;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.hud-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(100px, calc(env(safe-area-inset-bottom) + 90px));
+  transform: translateX(-50%);
+  color: #fff6e3;
+  font-size: 14px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.hud-hint.on {
+  opacity: 0.95;
+}
+
+/* ── 조이스틱 ── */
+.joy-base {
+  position: fixed;
+  width: 110px;
+  height: 110px;
+  margin: -55px 0 0 -55px;
+  border-radius: 50%;
+  background: rgba(255, 246, 227, 0.18);
+  border: 2px solid rgba(255, 246, 227, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.joy-base.on {
+  opacity: 1;
+}
+.joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 246, 227, 0.85);
+  transform: translate(-50%, -50%);
+}
+
+/* ── 도감 ── */
+.dex {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 10, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 18px;
+}
+.dex.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.dex-book {
+  width: min(440px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--paper);
+  background-image: linear-gradient(transparent 0, transparent 95%, rgba(181, 143, 69, 0.08) 95%);
+  border: 1px solid #b58f45;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), inset 0 0 0 6px var(--paper-2);
+  padding: 22px 20px;
+  transform: translateY(10px);
+  transition: transform 0.25s ease;
+}
+.dex.on .dex-book {
+  transform: none;
+}
+.dex-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(181, 143, 69, 0.5);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.dex-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+.dex-sub {
+  font-size: 13px;
+  color: #8a6a2c;
+  margin-top: 4px;
+}
+.dex-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.dex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dex-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: #fffaf0;
+  border: 1px solid rgba(181, 143, 69, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.dex-mark {
+  flex: 0 0 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: 'IM Fell English', serif;
+  font-size: 34px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--c, #6b5a45) 40%, #fffaf0);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 1px rgba(43, 33, 24, 0.25);
+}
+.dex-name {
+  font-size: 17px;
+  font-weight: 700;
+}
+.dex-n {
+  font-weight: 400;
+  font-size: 14px;
+  color: #8a6a2c;
+}
+.dex-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.dex-meta {
+  font-size: 12px;
+  color: #8a6a2c;
+  margin-top: 4px;
+}
+.dex-card.unknown {
+  background: #f1e6cd;
+}
+.dex-card.unknown .dex-mark {
+  background: #3a3128;
+  color: #6b5d4c;
+  text-shadow: none;
+}
+.dex-card.unknown .dex-name {
+  color: #7a6a55;
+  letter-spacing: 0.2em;
+}
+.dex-card.unknown .dex-desc {
+  color: #7a6a55;
+}
