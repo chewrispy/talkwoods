@@ -1,8 +1,9 @@
 // 문장부호 곤충 데이터
-// 새 곤충을 추가하려면 이 배열에 항목을 하나 더 넣으면 돼요.
-//  - time: 'day' | 'night' | 'any'
-//  - zone: 숲 맵(world/forest.js)의 ZONES 이름
-//  - behavior: 'crawl'(땅 기어다니기) | 'flutter'(팔랑팔랑) | 'float'(둥실둥실 빛나기)
+// 새 곤충을 추가하려면 이 배열에 항목을 하나 더 넣고, data/areas.js의 숲 insects에 몇 마리 살지 적어요.
+//  - time: 'day' | 'night' | 'any'  (숲마다 바꿀 수 있어요)
+//  - zone: 기본으로 사는 장소 (숲의 zones 이름)
+//  - behavior: 'crawl'(기어다니기) | 'flutter'(팔랑팔랑) | 'float'(둥실둥실 빛나기) | 'hop'(폴짝폴짝)
+//  - model: 생김새 (insects/insectManager.js)
 
 export const INSECTS = [
   {
@@ -12,7 +13,7 @@ export const INSECTS = [
     time: 'day',
     zone: 'stumps',
     behavior: 'crawl',
-    count: 6,
+    model: 'ant',
     color: '#3a2a1e',
     desc: '한 마리가 느낌표 하나. 여럿이 모이면 말에 힘이 실린다.',
     hint: '낮에 그루터기 근처 땅을 잘 살펴보세요.',
@@ -24,10 +25,10 @@ export const INSECTS = [
     time: 'day',
     zone: 'meadow',
     behavior: 'flutter',
-    count: 5,
+    model: 'butterfly',
     color: '#f2a7c3',
     desc: '¿? 모양 날개로 팔랑이며 대답을 재촉한다.',
-    hint: '햇살 좋은 낮, 꽃밭 위를 날아다닌대요.',
+    hint: '햇살 좋은 낮, 근황의 숲 꽃밭 위를 날아다닌대요.',
   },
   {
     id: 'firefly',
@@ -36,9 +37,91 @@ export const INSECTS = [
     time: 'night',
     zone: 'pond',
     behavior: 'float',
-    count: 7,
+    model: 'firefly',
     color: '#e8ff8a',
     desc: '아련하고 흐릿한 빛. 말끝을 흐려 상대를 애타게 만든다.',
     hint: '밤이 되면 연못가에 작은 빛이 떠오른대요.',
   },
+  {
+    id: 'caterpillar',
+    name: '애벌레',
+    mark: ';',
+    time: 'day',
+    zone: 'meadow',
+    behavior: 'crawl',
+    model: 'caterpillar',
+    color: '#8fd16a',
+    speed: 0.25,
+    morphTo: 'butterfly',
+    desc: '땀방울을 달고 꼬물꼬물. 어색할 때 흘리는 식은땀 ;; 오래 두면 나비가 된다.',
+    hint: '근황의 숲 꽃밭 아래를 꼬물꼬물 기어다닌대요.',
+  },
+  {
+    id: 'pollen',
+    name: '꽃가루',
+    mark: '*',
+    time: 'day',
+    zone: 'meadow',
+    behavior: 'drift',
+    model: 'pollen',
+    color: '#ffd84a',
+    speed: 0.35,
+    footnote: true,
+    desc: '확대하면 뾰족뾰족 별 모양인 *. 바람 따라 흩날리며 말에 부연설명을 달아 한마디 더 길게 이어준다.',
+    hint: '햇살 좋은 낮, 근황의 숲 꽃밭 위를 둥실둥실 떠다닌대요.',
+  },
+  {
+    id: 'snail',
+    name: '달팽이',
+    mark: '@',
+    time: 'any',
+    zone: 'stumps',
+    behavior: 'crawl',
+    model: 'snail',
+    color: '#c9a6e8',
+    speed: 0.12,
+    shy: true,
+    desc: '누군가를 콕 집어 부르는 @. 부끄러우면 껍데기에 쏙 숨는다.',
+    hint: '귓속말의 숲 그루터기 사이를 느릿느릿 기어다닌대요.',
+  },
+  {
+    id: 'moth',
+    name: '나방',
+    mark: '“”',
+    time: 'night',
+    zone: 'meadow',
+    behavior: 'flutter',
+    model: 'moth',
+    color: '#e8dcc0',
+    desc: '남의 말을 따옴표에 담아 이리저리 옮기는 나방. 소문은 대개 이 녀석이 퍼뜨린다.',
+    hint: '귓속말의 숲에 밤이 오면 꽃밭 위로 날아든대요.',
+  },
+  {
+    id: 'cricket',
+    name: '귀뚜라미',
+    mark: 'ㅋ',
+    time: 'any',
+    zone: 'meadow',
+    behavior: 'hop',
+    model: 'cricket',
+    color: '#7a5a34',
+    desc: '"킥킥" 하고 우는 귀뚜라미. ㅋ 하나는 세상에서 제일 열받는 비웃음.',
+    hint: '싸움의 숲 마른 꽃밭에서 폴짝폴짝 뛰어다닌대요.',
+  },
+  {
+    id: 'bee',
+    name: '벌',
+    mark: 'ㅗ',
+    time: 'day',
+    zone: 'stumps',
+    behavior: 'flutter',
+    model: 'bee',
+    color: '#f2c230',
+    speed: 0.9,
+    stinger: true,
+    desc: '욕은 톡 쏘는 법. 엉덩이 침이 ㅗ 모양인 벌. 가까이 가면 침을 바짝 치켜세운다.',
+    hint: '싸움의 숲 그루터기 근처를 아주 가끔 붕붕 날아다닌대요.',
+  },
 ];
+
+export const INSECT_BY_ID = Object.fromEntries(INSECTS.map((t) => [t.id, t]));

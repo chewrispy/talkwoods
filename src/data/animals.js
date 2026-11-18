@@ -12,6 +12,7 @@ export const HEARTS_TO_FRIEND = 3;
 export const ANIMALS = [
   {
     id: 'grotta',
+    secret: { word: '사실은', line: '(소곤) 사실은… 나도 가끔은 아니라고 하고 싶어.' },
     type: '긍정',
     name: '그로타',
     kind: '맞장구 새',
@@ -36,6 +37,7 @@ export const ANIMALS = [
   },
   {
     id: 'anyong',
+    secret: { word: '좋아', line: '(소곤) …사실 다 좋아요. 비밀이에요.' },
     type: '부정',
     name: '아뇽',
     kind: '아니라는 새',
@@ -60,6 +62,7 @@ export const ANIMALS = [
   },
   {
     id: 'grellsdo',
+    secret: { word: '졸려', line: '(소곤) 사실… 그냥 졸려서 그럴 수도 있다고 한 거야…' },
     type: '무력화',
     name: '그럴스도',
     kind: '나무늘보',
@@ -84,6 +87,7 @@ export const ANIMALS = [
   },
   {
     id: 'yukaguri',
+    secret: { word: '미안', line: '(소곤) 사실 따지고 나면 미안할 때가 많아.' },
     type: '공격',
     name: '유카구리',
     kind: '따지는 딱따구리',
@@ -108,6 +112,7 @@ export const ANIMALS = [
   },
   {
     id: 'graeso',
+    secret: { word: '궁금해', line: '(소곤) …사실 그래서 다음이 진짜 궁금해.' },
     type: '무력화',
     name: '그래소',
     kind: '물소',
@@ -132,6 +137,7 @@ export const ANIMALS = [
   },
   {
     id: 'mar',
+    secret: { word: '안아줘', line: '(소곤) 힝… 사실 안아주면 안 삐져.' },
     type: '지원',
     name: '마르',
     kind: '삐지는 말',
@@ -156,6 +162,7 @@ export const ANIMALS = [
   },
   {
     id: 'sunhama',
+    secret: { word: '무서워', line: '(소곤) 사실… 유혈사태 나는 거 제일 무서워하는 건 나야.' },
     type: '협박',
     name: '순하마',
     kind: '협박하는 하마',
@@ -181,6 +188,7 @@ export const ANIMALS = [
   // ── 귓속말의 숲 ──
   {
     id: 'oeong',
+    secret: { word: '몰라', line: '(소곤) 사실… 무슨 말인지 하나도 몰랐어. 오오…' },
     type: '자폭 유도',
     area: 'whisper',
     name: '오엉',
@@ -206,6 +214,7 @@ export const ANIMALS = [
   },
   {
     id: 'quokka',
+    secret: { word: '고마워', line: '(소곤) 사진값은 농담이야. 와줘서 고마워.' },
     type: '지원',
     area: 'whisper',
     name: '쿼카',
@@ -215,11 +224,11 @@ export const ANIMALS = [
     color: '#a8825e',
     lines: ['(방긋)', '(은은하게 웃는다)', '(찰칵) 같이 사진 찍었어. …천 원이야.', '(방긋방긋)'],
     escalate: false,
-    likes: 'butterfly',
+    likes: 'snail',
     word: '헤헤',
     favorite: '헤헤…',
     reactions: {
-      like: '(방긋!) 나비 예쁘다…',
+      like: '(방긋!) 나를 콕 집어줬네…',
       other: '(그래도 방긋)',
       fav: '헤헤… (세상에서 제일 행복한 얼굴)',
     },
@@ -232,6 +241,7 @@ export const ANIMALS = [
   // ── 싸움의 숲 ──
   {
     id: 'meerkat',
+    secret: { word: '진심', line: '(소곤) 따라 하는 건… 사실 네 말 잘 듣고 있다는 뜻이야.' },
     type: '도발',
     area: 'fight',
     name: '미어캣',
@@ -242,11 +252,11 @@ export const ANIMALS = [
     lines: ['아니~~?', '아니~~ 진짜요~~?', '아니~~ 그렇다고요~~?'],
     mirror: true,
     escalate: false,
-    likes: 'ant',
+    likes: 'cricket',
     word: '아니~~',
     favorite: '아니~~?',
     reactions: {
-      like: '아니~~ 개미를 주신다고요~~? …고마워요.',
+      like: '아니~~ ㅋ를 주신다고요~~? …ㅋ',
       other: '아니~~ 이걸 주신다고요~~?',
       fav: '아니~~? …이건 진짜 내 말이네.',
     },
@@ -258,6 +268,7 @@ export const ANIMALS = [
   },
   {
     id: 'shibaem',
+    secret: { word: '사랑해', line: '(소곤) ㅇㅆ… 사실 욕 말고 이 말 하고 싶었어.' },
     type: '공격',
     area: 'fight',
     name: '쉬뱀',
@@ -267,22 +278,23 @@ export const ANIMALS = [
     color: '#9ad66a',
     lines: ['ㅇㅆ', 'ㅅㅂ', 'ㅅㅂㄹㅁ'],
     escalate: true,
-    likes: 'firefly',
+    likes: 'bee',
     word: 'ㅇㅆ',
     favorite: 'ㅇㅆ!!!',
     reactions: {
-      like: '…반딧불이? …ㅇㅆ, 예쁘네.',
+      like: 'ㅗ…? …ㅇㅆ, 너 좀 치는데?',
       other: 'ㅇㅆ. 이게 뭔데.',
       fav: 'ㅇㅆ!!! …속이 다 시원하다.',
     },
     friendLine: 'ㅇㅆ… 친구 하자. 욕은 너한테만 안 할게.',
     cheer: ['ㅇㅆ 잘하네', 'ㅇㅆ!', '…인정.'],
-    desc: '대화 내용과 상관없이 멘탈 데미지를 주는 뱀. 화날수록 연두 → 초록 → 보라로 변한다.',
+    desc: '대화 내용과 상관없이 멘탈 데미지를 주는 뱀. 화날수록 연두 → 초록 → 보라로 변한다. ㅗ 벌을 좋아한다.',
     trait: 'coil',
     traitName: '똬리 덩굴',
   },
   {
     id: 'jinjjanya',
+    secret: { word: '믿어', line: '(소곤) 진짜냐고 묻는 건… 믿고 싶어서야.' },
     type: '공격',
     area: 'fight',
     name: '진짜냐',
@@ -293,11 +305,11 @@ export const ANIMALS = [
     lines: ['진짜냐?', '진짜냐고?', '진짜냐니까!!!'],
     escalate: true,
     noFollow: true,
-    likes: 'butterfly',
+    likes: 'ant',
     word: '진짜',
     favorite: '진짜?!?',
     reactions: {
-      like: '물음표! 진짜냐? 진짜 주는 거냐?',
+      like: '느낌표! 진짜냐!! 진짜 주는 거냐!!',
       other: '진짜냐…? 이걸?',
       fav: '진짜?!? …진짜다!!! (떼로 첨벙첨벙)',
     },

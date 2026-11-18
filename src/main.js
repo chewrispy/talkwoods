@@ -82,6 +82,9 @@ function buildArea(id) {
   pot = area.features.includes('pot') ? createPot(scene, world) : null;
   fruits = area.features.includes('fruits') ? createFruitBushes(scene, world) : null;
   insects = new InsectManager(scene, world);
+  insects.onMorph = (bug, from, to) => {
+    if (Math.hypot(bug.pos.x - player.position.x, bug.pos.z - player.position.z) < 14) hud.toast(`🦋 ${josa(from.name, '가', '이')} ${josa(to.name, '가', '이')} 됐어요!`);
+  };
   // 표지판 옆에서 시작해요
   const sp = world.zones.signpost;
   const arrival = { x: sp.x - 2.2, z: sp.z + 2.2 };
@@ -265,6 +268,7 @@ function myTurn() {
   const f = activeFruit?.fruit.id;
   if (f === 'nemo') return { kind: 'nemo', me: pick(MY_LINES.nemo), tag: '◼ 네모 말투' };
   if (f === 'donggeul') return { kind: 'donggeul', me: pick(MY_LINES.donggeul), tag: '● 동글 말투' };
+  if (f === 'sogon') return { kind: 'sogon', me: pick(MY_LINES.sogon), tag: '🍄 소곤소곤' };
   const mood = time.mood;
   if (mood && Math.random() < TIME_TONE_CHANCE) {
     return mood === 'sunset'
@@ -272,6 +276,17 @@ function myTurn() {
       : { kind: 'dawn', me: pick(MY_LINES.dawn), tag: '🌌 새벽 말투' };
   }
   return { kind: 'normal', me: pick(MY_LINES.normal), tag: '' };
+}
+
+// 소곤 버섯: 친구가 비밀 단어 카드를 알려줘요
+function grantSecret(d) {
+  const w = d.secret.word;
+  if (save.words.includes(w)) return;
+  save.words.push(w);
+  save.secrets = save.secrets || {};
+  save.secrets[d.id] = true;
+  writeSave(save);
+  hud.toast(`🤫 비밀 단어 카드 <b>「${w}」</b>${josa(w, '를', '을').slice(w.length)} 받았어요`);
 }
 
 // 미어캣의 아니시에이팅: 내 말을 메아리처럼 따라 해요
@@ -290,6 +305,10 @@ function replyTo(a, base, kind) {
     return NEMO_REACT[d.type] || `${base} (전혀 안 통한다)`;
   }
   if (kind === 'donggeul') return DONGGEUL_REACT[d.type] || `${base.replace(/[.!?]*$/, '')}~ 🙂`;
+  if (kind === 'sogon' && d.secret) {
+    grantSecret(d);
+    return d.secret.line;
+  }
   if (kind === 'sunset') return `${base} ${SUNSET_TAG}`;
   if (kind === 'dawn') return `${base} ${DAWN_TAG}`;
   return base;
@@ -402,7 +421,7 @@ function giftSentence(a, text) {
 function eatFruit(b) {
   fruits.pick(b);
   activeFruit = { fruit: b.fruit, left: FRUIT_SECONDS };
-  hud.toast(`<span style="color:${b.fruit.color}">${b.fruit.icon}</span> <b>${b.fruit.name}</b>을 먹었어요! ${josa(b.fruit.affects, '가', '이')} 바뀌어요`);
+  hud.toast(`<span style="color:${b.fruit.color}">${b.fruit.icon}</span> <b>${josa(b.fruit.name, '를', '을')}</b> 먹었어요! ${josa(b.fruit.affects, '가', '이')} 바뀌어요`);
 }
 
 function checkGrowth() {
@@ -507,7 +526,7 @@ function loop(ts) {
   }
   const f = animals.follower;
   player.speedMul = f && f.data.id === 'mar' && !f.sulking ? 1.7 : 1;
-  insects.update(dt, time.isDay);
+  insects.update(dt, time.isDay, player.position);
   animals.update(dt, player);
   const now = performance.now() / 1000;
   pot?.update(now, time.isDay);

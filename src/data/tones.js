@@ -7,6 +7,7 @@ export const FRUIT_RESPAWN = 45;
 export const FRUITS = [
   {
     id: 'nemo',
+    area: 'catchup',
     name: '네모네모 열매',
     icon: '◼',
     shape: 'box',
@@ -17,6 +18,7 @@ export const FRUITS = [
   },
   {
     id: 'semo',
+    area: 'catchup',
     name: '세모 열매',
     icon: '▲',
     shape: 'cone',
@@ -27,6 +29,7 @@ export const FRUITS = [
   },
   {
     id: 'donggeul',
+    area: 'catchup',
     name: '동글동글 열매',
     icon: '●',
     shape: 'sphere',
@@ -34,6 +37,18 @@ export const FRUITS = [
     spot: 'donggeulBush',
     affects: '둘 다',
     desc: '말투가 둥글어지고 모든 말을 둥글게 받아들여요.',
+  },
+  {
+    id: 'sogon',
+    area: 'whisper',
+    name: '소곤 버섯',
+    icon: '🍄',
+    shape: 'mushroom',
+    color: '#c9a6ff',
+    spot: 'sogonA',
+    spots: ['sogonA', 'sogonB', 'sogonC'],
+    affects: '내 목소리',
+    desc: '먹으면 목소리가 귓속말이 돼요. 친구들이 다가와 비밀 단어와 속마음을 알려줘요.',
   },
 ];
 
@@ -45,6 +60,7 @@ export const MY_LINES = {
   nemo: ['야. 뭐해.', '빨리 말해.', '그래서 뭐.', '대답 안 해?', '비켜봐.'],
   donggeul: ['안녕~ 오늘도 반가워~', '천천히 얘기해도 괜찮아~', '네 얘기 듣는 거 좋아~', '오늘 하루 어땠어~?'],
   sunset: ['노을이 예쁘다… 너도.', '이 시간엔 왠지 마음이 몽글몽글해.', '노을 보면서 얘기하니까 좋다.', '하늘이 너 볼처럼 빨개졌어.'],
+  sogon: ['(소곤) 나 비밀 하나 말해줄까?', '(소곤) 여기서만 하는 얘긴데…', '(소곤) 너한테만 물어볼게.', '(소곤) 아무한테도 말 안 할게.'],
   dawn: ['나 요즘 잘 살고 있는 걸까…', '새벽엔 괜히 생각이 많아져.', '너는 꿈이 뭐야…?', '이 시간엔 다들 무슨 생각 할까.'],
 };
 

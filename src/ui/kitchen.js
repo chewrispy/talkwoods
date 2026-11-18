@@ -23,6 +23,7 @@ export class Kitchen {
         <div class="dlg-gift-row kit-words"></div>
         <div class="dlg-gift-label">문장부호 넣기</div>
         <div class="dlg-gift-row kit-marks"></div>
+        <div class="kit-foot"></div>
         <div class="dlg-actions">
           <button type="button" class="kit-clear">다시</button>
           <button type="button" class="kit-cook dlg-bye">보글보글 끓이기</button>
@@ -35,9 +36,17 @@ export class Kitchen {
     this.wordsEl = this.el.querySelector('.kit-words');
     this.marksEl = this.el.querySelector('.kit-marks');
     this.cookBtn = this.el.querySelector('.kit-cook');
+    this.footEl = this.el.querySelector('.kit-foot');
+    this.footEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-word2]');
+      if (!b) return;
+      this.word2 = this.word2 === b.dataset.word2 ? null : b.dataset.word2;
+      this.render();
+    });
     this.el.querySelector('.kit-x').addEventListener('click', () => this.close());
     this.el.querySelector('.kit-clear').addEventListener('click', () => {
       this.marks = [];
+      this.word2 = null;
       this.render();
     });
     this.cookBtn.addEventListener('click', () => this.cook());
@@ -63,6 +72,7 @@ export class Kitchen {
 
   open() {
     this.marks = [];
+    this.word2 = null;
     if (!this.word || !this.save.words.includes(this.word)) this.word = this.save.words[0] || null;
     this.el.classList.add('on');
     this.render();
@@ -78,9 +88,15 @@ export class Kitchen {
     return this.marks.filter((m) => m === id).length;
   }
 
+  get hasFootnote() {
+    return this.marks.some((id) => INSECTS.find((t) => t.id === id).footnote);
+  }
+
   get text() {
     if (!this.word) return '';
-    return this.word + this.marks.map((id) => INSECTS.find((t) => t.id === id).mark).join('');
+    const base = this.word + this.marks.map((id) => INSECTS.find((t) => t.id === id).mark).join('');
+    // * 부연설명: 단어를 하나 더 이어 붙여요
+    return this.hasFootnote && this.word2 ? `${base} ${this.word2}` : base;
   }
 
   render() {
@@ -93,6 +109,15 @@ export class Kitchen {
       if (!(this.save.caught[t.id] > 0)) return '';
       return `<button type="button" data-mark="${t.id}" ${left > 0 && this.marks.length < MAX_MARKS ? '' : 'disabled'}><b>${t.mark}</b> ${t.name} <span>×${left}</span></button>`;
     }).join('') || '<span class="kit-empty">문장부호 곤충을 잡아오세요</span>';
+
+    if (this.hasFootnote) {
+      this.footEl.innerHTML = `<div class="dlg-gift-label">* 부연설명: 단어 하나 더 붙이기</div><div class="dlg-gift-row">${this.save.words
+        .map((w) => `<button type="button" data-word2="${w}" class="${w === this.word2 ? 'sel' : ''}">${w}</button>`)
+        .join('')}</div>`;
+    } else {
+      this.word2 = null;
+      this.footEl.innerHTML = '';
+    }
 
     const text = this.text;
     if (!text) {
@@ -115,6 +140,7 @@ export class Kitchen {
     const text = this.text;
     for (const id of this.marks) this.save.inventory[id] -= 1;
     this.marks = [];
+    this.word2 = null;
     this.onCook(text);
     this.render();
   }

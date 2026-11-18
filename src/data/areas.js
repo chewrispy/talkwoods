@@ -35,6 +35,14 @@ export const AREAS = [
       donggeulBush: { x: -1, z: 12, r: 1.6 },
     },
     features: ['pot', 'fruits'],
+    // 이 숲에 사는 문장부호 곤충 (zone·time을 바꿔 쓸 수 있어요)
+    insects: [
+      { id: 'ant', count: 6 },
+      { id: 'butterfly', count: 5 },
+      { id: 'firefly', count: 7 },
+      { id: 'caterpillar', count: 4 },
+      { id: 'pollen', count: 6 },
+    ],
     palette: {
       ground: ['#6f9a4a', '#9dbb5a'],
       dirt: '#8a7350',
@@ -66,8 +74,18 @@ export const AREAS = [
       stumps: { x: -14, z: 12, r: 5 },
       owlPerch: { x: 8, z: -12, r: 2.4 },
       quokkaNook: { x: -3, z: 15, r: 2.4 },
+      // 소곤 버섯
+      sogonA: { x: -6, z: -4, r: 1.2 },
+      sogonB: { x: 18, z: -6, r: 1.2 },
+      sogonC: { x: -20, z: 2, r: 1.2 },
     },
-    features: ['mushrooms'],
+    features: ['mushrooms', 'fruits'],
+    insects: [
+      { id: 'firefly', count: 10, time: 'any' },
+      { id: 'firefly', count: 5, zone: 'meadow', time: 'any' },
+      { id: 'snail', count: 5 },
+      { id: 'moth', count: 6 },
+    ],
     palette: {
       ground: ['#4d6b62', '#647f72'],
       dirt: '#5a5370',
@@ -101,6 +119,12 @@ export const AREAS = [
       snakeRock: { x: -19, z: -1, r: 2.6 },
     },
     features: [],
+    insects: [
+      { id: 'ant', count: 14 },
+      { id: 'ant', count: 8, zone: 'meadow' },
+      { id: 'cricket', count: 7 },
+      { id: 'bee', count: 3 },
+    ],
     palette: {
       ground: ['#a07e4c', '#b9965a'],
       dirt: '#8a5a3a',
